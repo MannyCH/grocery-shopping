@@ -324,14 +324,28 @@ struct BasketView: View {
                                         )
                                         .id(filteredProducts[0].productId) // Force recreation when product changes
                                         
-                                        // "found products" caption after first item
-                                        Text("found products")
-                                            .font(MDXTypography.bodySmall)
-                                            .foregroundColor(MDXColors.textSecondary)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .padding(.horizontal, 16)
-                                            .padding(.top, MDXSpacing.md)
-                                            .padding(.bottom, MDXSpacing.sm)
+                                        // "found products" caption with "search more" link
+                                        HStack(alignment: .center, spacing: MDXSpacing.sm) {
+                                            Text("found products")
+                                                .font(MDXTypography.bodySmall)
+                                                .foregroundColor(MDXColors.textSecondary)
+                                            
+                                            Spacer()
+                                            
+                                            Button(action: {
+                                                // Action for search more - could open full search or filter
+                                                // For now, just a placeholder
+                                            }) {
+                                                Text("search more")
+                                                    .font(MDXTypography.bodySmall)
+                                                    .foregroundColor(MDXColors.primary)
+                                                    .underline()
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.top, MDXSpacing.md)
+                                        .padding(.bottom, MDXSpacing.sm)
                                         
                                         // Remaining products (skip first one)
                                         ForEach(Array(filteredProducts.enumerated()), id: \.element.id) { index, product in
