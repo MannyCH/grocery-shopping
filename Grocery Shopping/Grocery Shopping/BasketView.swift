@@ -81,179 +81,197 @@ struct BasketView: View {
             
             Divider()
             
-            // Content Area with scroll detection
-            ScrollView {
-                GeometryReader { geometry in
-                    Color.clear
-                        .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
-                }
-                .frame(height: 0)
-                if searchText.isEmpty && basketItems.isEmpty {
-                    // Empty State Content (when basket is empty and no search)
-                    VStack(spacing: MDXSpacing.lg) {
-                        // Illustration
-                        EmptyBasketIllustration()
-                            .padding(.top, MDXSpacing.xxl)
-                        
-                        // Text Content - MDX Typography
-                        VStack(spacing: MDXSpacing.md) {
-                            Text("Fill your basket")
-                                .font(MDXTypography.heading1)
-                                .foregroundColor(MDXColors.textPrimary)
-                            
-                            Text("Add products while browsing or use the search field below.")
-                                .font(MDXTypography.body)
-                                .foregroundColor(MDXColors.textSecondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, MDXSpacing.xl)
-                            
-                            Text("Switch to the shopping list at any time to use it to shop.")
-                                .font(MDXTypography.body)
-                                .foregroundColor(MDXColors.textSecondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, MDXSpacing.xl)
-                        }
-                        .padding(.top, MDXSpacing.xl)
-                        .padding(.bottom, MDXSpacing.xxl)
+            // Main content area
+            if searchText.isEmpty {
+                // Content Area with scroll detection (when not searching)
+                ScrollView {
+                    GeometryReader { geometry in
+                        Color.clear
+                            .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                     }
-                } else if !searchText.isEmpty {
-                    // Search Results - Product Cards
-                    VStack(spacing: MDXSpacing.md) {
-                        // Product cards (filtered by search)
-                        if filteredProducts.isEmpty {
-                            // No results state
+                    .frame(height: 0)
+                    if basketItems.isEmpty {
+                        // Empty State Content (when basket is empty and no search)
+                        VStack(spacing: MDXSpacing.lg) {
+                            // Illustration
+                            EmptyBasketIllustration()
+                                .padding(.top, MDXSpacing.xxl)
+                            
+                            // Text Content - MDX Typography
                             VStack(spacing: MDXSpacing.md) {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(MDXColors.textSecondary.opacity(0.5))
-                                    .padding(.top, MDXSpacing.xxl)
-                                
-                                Text("No products found")
-                                    .font(MDXTypography.heading3)
+                                Text("Fill your basket")
+                                    .font(MDXTypography.heading1)
                                     .foregroundColor(MDXColors.textPrimary)
                                 
-                                Text("Try a different search term")
+                                Text("Add products while browsing or use the search field below.")
                                     .font(MDXTypography.body)
                                     .foregroundColor(MDXColors.textSecondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, MDXSpacing.xl)
+                                
+                                Text("Switch to the shopping list at any time to use it to shop.")
+                                    .font(MDXTypography.body)
+                                    .foregroundColor(MDXColors.textSecondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, MDXSpacing.xl)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, MDXSpacing.xxl)
-                        } else {
-                            // Product cards list (MDX horizontal layout) - No spacing, full width
-                            LazyVStack(spacing: 0) {
-                                // "my top products" caption before first item
-                                if !filteredProducts.isEmpty {
-                                    Text("my top products")
-                                        .font(MDXTypography.bodySmall)
-                                        .foregroundColor(MDXColors.textSecondary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 16)
-                                        .padding(.top, MDXSpacing.md)
-                                        .padding(.bottom, MDXSpacing.sm)
+                            .padding(.top, MDXSpacing.xl)
+                            .padding(.bottom, MDXSpacing.xxl)
+                        }
+                    } else {
+                        // Basket with items (no search)
+                        VStack(spacing: MDXSpacing.md) {
+                            // Basket items list
+                            LazyVStack(spacing: MDXSpacing.sm) {
+                                ForEach(basketItems, id: \.id) { item in
+                                    BasketItemRow(item: item)
+                                }
+                            }
+                            .padding(.horizontal, MDXSpacing.xl)
+                            .padding(.top, MDXSpacing.lg)
+                            .padding(.bottom, MDXSpacing.xl)
+                        }
+                    }
+                }
+                .coordinateSpace(name: "scroll")
+                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                    scrollOffset = -value
+                }
+            } else {
+                // Search mode - Show "Search" heading and contained results
+                VStack(spacing: 0) {
+                    // "Search" heading at top (like in the screenshot)
+                    Text("Search")
+                        .font(MDXTypography.heading1)
+                        .foregroundColor(MDXColors.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, MDXSpacing.md)
+                        .padding(.top, MDXSpacing.lg)
+                        .padding(.bottom, MDXSpacing.md)
+                    
+                    Spacer()
+                    
+                    // Search Results Container - Fixed height (~500pt which is roughly 800px in design units)
+                    VStack(spacing: 0) {
+                        ScrollView {
+                            // Product cards (filtered by search)
+                            if filteredProducts.isEmpty {
+                                // No results state
+                                VStack(spacing: MDXSpacing.md) {
+                                    Image(systemName: "magnifyingglass")
+                                        .font(.system(size: 48))
+                                        .foregroundColor(MDXColors.textSecondary.opacity(0.5))
+                                        .padding(.top, MDXSpacing.xxl)
                                     
-                                    // First product
-                                    MDXProductCard(
-                                        product: filteredProducts[0],
-                                        initialQuantity: basketItems.first(where: { $0.name == filteredProducts[0].name })?.quantity ?? 0,
-                                        onAddToCart: { qty in
-                                            // Update or add product to basket
-                                            if let existingIndex = basketItems.firstIndex(where: { $0.name == filteredProducts[0].name }) {
-                                                // Update existing item quantity
-                                                if qty > 0 {
-                                                    // Replace the item with updated quantity
-                                                    let updatedItem = BasketItem(
+                                    Text("No products found")
+                                        .font(MDXTypography.heading3)
+                                        .foregroundColor(MDXColors.textPrimary)
+                                    
+                                    Text("Try a different search term")
+                                        .font(MDXTypography.body)
+                                        .foregroundColor(MDXColors.textSecondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, MDXSpacing.xxl)
+                            } else {
+                                // Product cards list (MDX horizontal layout) - No spacing, full width
+                                LazyVStack(spacing: 0) {
+                                    // "my top products" caption before first item
+                                    if !filteredProducts.isEmpty {
+                                        Text("my top products")
+                                            .font(MDXTypography.bodySmall)
+                                            .foregroundColor(MDXColors.textSecondary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.top, MDXSpacing.md)
+                                            .padding(.bottom, MDXSpacing.sm)
+                                        
+                                        // First product
+                                        MDXProductCard(
+                                            product: filteredProducts[0],
+                                            initialQuantity: basketItems.first(where: { $0.name == filteredProducts[0].name })?.quantity ?? 0,
+                                            onAddToCart: { qty in
+                                                // Update or add product to basket
+                                                if let existingIndex = basketItems.firstIndex(where: { $0.name == filteredProducts[0].name }) {
+                                                    // Update existing item quantity
+                                                    if qty > 0 {
+                                                        // Replace the item with updated quantity
+                                                        let updatedItem = BasketItem(
+                                                            name: filteredProducts[0].name,
+                                                            quantity: qty,
+                                                            price: filteredProducts[0].price
+                                                        )
+                                                        basketItems[existingIndex] = updatedItem
+                                                    } else {
+                                                        // Remove if quantity is 0
+                                                        basketItems.remove(at: existingIndex)
+                                                    }
+                                                } else if qty > 0 {
+                                                    // Add new item
+                                                    let newItem = BasketItem(
                                                         name: filteredProducts[0].name,
                                                         quantity: qty,
                                                         price: filteredProducts[0].price
                                                     )
-                                                    basketItems[existingIndex] = updatedItem
-                                                } else {
-                                                    // Remove if quantity is 0
-                                                    basketItems.remove(at: existingIndex)
+                                                    basketItems.append(newItem)
                                                 }
-                                            } else if qty > 0 {
-                                                // Add new item
-                                                let newItem = BasketItem(
-                                                    name: filteredProducts[0].name,
-                                                    quantity: qty,
-                                                    price: filteredProducts[0].price
-                                                )
-                                                basketItems.append(newItem)
                                             }
-                                        }
-                                    )
-                                    
-                                    // "found products" caption after first item
-                                    Text("found products")
-                                        .font(MDXTypography.bodySmall)
-                                        .foregroundColor(MDXColors.textSecondary)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 16)
-                                        .padding(.top, MDXSpacing.md)
-                                        .padding(.bottom, MDXSpacing.sm)
-                                    
-                                    // Remaining products (skip first one)
-                                    ForEach(Array(filteredProducts.enumerated()), id: \.element.id) { index, product in
-                                        if index > 0 {
-                                            MDXProductCard(
-                                                product: product,
-                                                initialQuantity: basketItems.first(where: { $0.name == product.name })?.quantity ?? 0,
-                                                onAddToCart: { qty in
-                                                    // Update or add product to basket
-                                                    if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
-                                                        // Update existing item quantity
-                                                        if qty > 0 {
-                                                            // Replace the item with updated quantity
-                                                            let updatedItem = BasketItem(
+                                        )
+                                        
+                                        // "found products" caption after first item
+                                        Text("found products")
+                                            .font(MDXTypography.bodySmall)
+                                            .foregroundColor(MDXColors.textSecondary)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.top, MDXSpacing.md)
+                                            .padding(.bottom, MDXSpacing.sm)
+                                        
+                                        // Remaining products (skip first one)
+                                        ForEach(Array(filteredProducts.enumerated()), id: \.element.id) { index, product in
+                                            if index > 0 {
+                                                MDXProductCard(
+                                                    product: product,
+                                                    initialQuantity: basketItems.first(where: { $0.name == product.name })?.quantity ?? 0,
+                                                    onAddToCart: { qty in
+                                                        // Update or add product to basket
+                                                        if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
+                                                            // Update existing item quantity
+                                                            if qty > 0 {
+                                                                // Replace the item with updated quantity
+                                                                let updatedItem = BasketItem(
+                                                                    name: product.name,
+                                                                    quantity: qty,
+                                                                    price: product.price
+                                                                )
+                                                                basketItems[existingIndex] = updatedItem
+                                                            } else {
+                                                                // Remove if quantity is 0
+                                                                basketItems.remove(at: existingIndex)
+                                                            }
+                                                        } else if qty > 0 {
+                                                            // Add new item
+                                                            let newItem = BasketItem(
                                                                 name: product.name,
                                                                 quantity: qty,
                                                                 price: product.price
                                                             )
-                                                            basketItems[existingIndex] = updatedItem
-                                                        } else {
-                                                            // Remove if quantity is 0
-                                                            basketItems.remove(at: existingIndex)
+                                                            basketItems.append(newItem)
                                                         }
-                                                    } else if qty > 0 {
-                                                        // Add new item
-                                                        let newItem = BasketItem(
-                                                            name: product.name,
-                                                            quantity: qty,
-                                                            price: product.price
-                                                        )
-                                                        basketItems.append(newItem)
                                                     }
-                                                }
-                                            )
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            .padding(.top, MDXSpacing.md)
-                        }
-                    }
-                } else {
-                    // Basket with items (no search)
-                    VStack(spacing: MDXSpacing.md) {
-                        // Basket items list
-                        LazyVStack(spacing: MDXSpacing.sm) {
-                            ForEach(basketItems, id: \.id) { item in
-                                BasketItemRow(item: item)
+                                .padding(.bottom, MDXSpacing.sm)
                             }
                         }
-                        .padding(.horizontal, MDXSpacing.xl)
-                        .padding(.top, MDXSpacing.lg)
-                        .padding(.bottom, MDXSpacing.xl)
+                        .frame(maxHeight: 500) // ~800px in design units - fixed height container for search results
+                        .background(Color(white: 0.95)) // Light grey background for search container
                     }
                 }
             }
-            .coordinateSpace(name: "scroll")
-            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                scrollOffset = -value
-            }
-            
-            // Spacer pushes search field to bottom
-            Spacer(minLength: 0)
             
             // Search Field - Fixed at bottom of screen
             VStack(spacing: 0) {
