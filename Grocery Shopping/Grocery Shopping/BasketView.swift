@@ -870,6 +870,9 @@ struct AddedProductRow: View {
     let quantity: Int
     let onQuantityChange: (Int) -> Void
     
+    @State private var isExpanded = false // Track if counter is expanded
+    @State private var collapseTimer: Timer?
+    
     // Helper to extract weight from product information
     private func extractWeight(from info: String?) -> String {
         guard let info = info else { return "" }
@@ -926,6 +929,16 @@ struct AddedProductRow: View {
         return "photo"
     }
     
+    // Start timer to collapse counter after 3 seconds
+    private func startCollapseTimer() {
+        collapseTimer?.invalidate()
+        collapseTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isExpanded = false
+            }
+        }
+    }
+    
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             // Product Image (left)
@@ -970,53 +983,82 @@ struct AddedProductRow: View {
                 }
             }
             
-            // Quantity Controls (minus, number, plus) - More compact/square
-            HStack(spacing: 4) {
-                // Minus Button
-                Button(action: {
-                    if quantity > 0 {
-                        onQuantityChange(quantity - 1)
+            // Quantity Display/Controls - Collapsed or Expanded
+            if isExpanded {
+                // Expanded: Full counter with minus, number, plus
+                HStack(spacing: 4) {
+                    // Minus Button
+                    Button(action: {
+                        if quantity > 0 {
+                            onQuantityChange(quantity - 1)
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            startCollapseTimer()
+                        }
+                    }) {
+                        Image(systemName: "minus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(MDXColors.textPrimary)
+                            .frame(width: 28, height: 28)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Quantity Number (square)
+                    Text("\(quantity)")
+                        .font(MDXTypography.helveticaNeue(size: 14, weight: .bold))
+                        .foregroundColor(MDXColors.textPrimary)
+                        .frame(width: 28, height: 28)
+                        .background(MDXColors.background)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                    
+                    // Plus Button (square)
+                    Button(action: {
+                        onQuantityChange(quantity + 1)
                         let generator = UIImpactFeedbackGenerator(style: .light)
                         generator.impactOccurred()
+                        startCollapseTimer()
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(MDXColors.textPrimary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
-                }) {
-                    Image(systemName: "minus")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(MDXColors.textPrimary)
-                        .frame(width: 28, height: 28)
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
-                
-                // Quantity Number (square)
-                Text("\(quantity)")
-                    .font(MDXTypography.helveticaNeue(size: 14, weight: .bold))
-                    .foregroundColor(MDXColors.textPrimary)
-                    .frame(width: 28, height: 28)
-                    .background(MDXColors.background)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-                
-                // Plus Button (square)
+                .transition(.scale.combined(with: .opacity))
+            } else {
+                // Collapsed: Just show quantity number
                 Button(action: {
-                    onQuantityChange(quantity + 1)
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isExpanded = true
+                    }
+                    startCollapseTimer()
                 }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 12, weight: .bold))
+                    Text("\(quantity)")
+                        .font(MDXTypography.helveticaNeue(size: 16, weight: .bold))
                         .foregroundColor(MDXColors.textPrimary)
-                        .frame(width: 28, height: 28)
-                        .background(Color.gray.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .frame(width: 32, height: 32)
+                        .background(MDXColors.surface)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .transition(.scale.combined(with: .opacity))
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(MDXColors.background)
+        .onDisappear {
+            collapseTimer?.invalidate()
+        }
     }
 }
 
