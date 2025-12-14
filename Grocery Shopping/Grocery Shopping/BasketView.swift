@@ -143,24 +143,42 @@ struct BasketView: View {
             } else {
                 // Search mode - Activated when search field is focused
                 VStack(spacing: 0) {
-                    // "Search" heading at top (like in the screenshot)
+                    // Show last added item at top (~100px space)
+                    if let lastItem = basketItems.last {
+                        VStack(spacing: 0) {
+                            // Top divider
+                            Divider()
+                            
+                            // Last basket item (compact view)
+                            BasketItemRow(item: lastItem)
+                                .padding(.horizontal, MDXSpacing.md)
+                                .padding(.vertical, MDXSpacing.sm)
+                            
+                            // Bottom divider
+                            Divider()
+                        }
+                        .frame(height: 100)
+                        .background(MDXColors.background)
+                    }
+                    
+                    // "Search" heading
                     Text("Search")
                         .font(MDXTypography.heading1)
                         .foregroundColor(MDXColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, MDXSpacing.md)
-                        .padding(.top, MDXSpacing.lg)
-                        .padding(.bottom, MDXSpacing.md)
+                        .padding(.top, MDXSpacing.md)
+                        .padding(.bottom, MDXSpacing.sm)
                     
                     Spacer()
                     
-                    // Search Results Container - Fixed height (~500pt which is roughly 800px in design units)
+                    // Search Results Container - Fixed height (remaining space)
                     VStack(spacing: 0) {
                         ScrollView {
                             if searchText.isEmpty {
                                 // Empty space when no search text yet (just focused)
                                 Color.clear
-                                    .frame(height: 100)
+                                    .frame(height: 50)
                             } else if filteredProducts.isEmpty {
                                 // No results state (when searching but nothing found)
                                 VStack(spacing: MDXSpacing.md) {
@@ -273,7 +291,7 @@ struct BasketView: View {
                                 .padding(.bottom, MDXSpacing.sm)
                             }
                         }
-                        .frame(maxHeight: 500) // ~800px in design units - fixed height container for search results
+                        .frame(maxHeight: 400) // Reduced from 500 to account for last item space
                         .background(Color(white: 0.95)) // Light grey background for search container
                     }
                 }
