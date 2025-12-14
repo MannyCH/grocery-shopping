@@ -7,11 +7,13 @@
 
 import SwiftUI
 
-@main
+// This file is no longer used - GroceryShoppingApp.swift is the main entry point
+// You can delete this file from Xcode if you want
+
 struct Grocery_ShoppingApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Text("This app entry point is not used")
         }
     }
 }
