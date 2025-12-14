@@ -386,11 +386,36 @@ struct BasketView: View {
                 // Top border
                 Divider()
                 
-                MDXSearchField(
-                    text: $searchText,
-                    placeholder: "add products",
-                    focused: $isSearchFocused
-                )
+                HStack(spacing: MDXSpacing.sm) {
+                    // Search field
+                    MDXSearchField(
+                        text: $searchText,
+                        placeholder: "add products",
+                        onSubmit: {
+                            // Dismiss keyboard when Enter is pressed
+                            isSearchFocused = false
+                            // Re-focus to keep search container visible
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isSearchFocused = true
+                            }
+                        },
+                        focused: $isSearchFocused
+                    )
+                    
+                    // Cancel button (appears when search is focused)
+                    if isSearchFocused {
+                        Button(action: {
+                            // Clear search and dismiss search container
+                            searchText = ""
+                            isSearchFocused = false
+                        }) {
+                            Text("Cancel")
+                                .font(MDXTypography.body)
+                                .foregroundColor(MDXColors.primary)
+                        }
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
+                }
                 .padding(.horizontal, MDXSpacing.md)
                 .padding(.vertical, MDXSpacing.md)
                 .background(MDXColors.background)

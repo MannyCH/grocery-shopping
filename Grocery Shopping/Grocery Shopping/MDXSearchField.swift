@@ -69,15 +69,11 @@ struct MDXSearchField: View {
                 }
             }
             
-            // Clear button (shown when text is not empty)
+            // Clear button (shown when text is not empty) - X icon
             if !text.isEmpty {
                 Button(action: {
                     text = ""
-                    if let focusedBinding = focused {
-                        focusedBinding.wrappedValue = false
-                    } else {
-                        internalIsFocused = false
-                    }
+                    // Keep focus so search container stays visible
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(MDXColors.textSecondary)
