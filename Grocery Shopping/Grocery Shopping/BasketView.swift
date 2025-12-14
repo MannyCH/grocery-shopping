@@ -393,11 +393,8 @@ struct BasketView: View {
                         placeholder: "add products",
                         onSubmit: {
                             // Dismiss keyboard when Enter is pressed
-                            isSearchFocused = false
-                            // Re-focus to keep search container visible
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isSearchFocused = true
-                            }
+                            // Keep search container visible by not changing isSearchFocused
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         },
                         focused: $isSearchFocused
                     )
