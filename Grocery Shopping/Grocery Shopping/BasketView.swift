@@ -143,24 +143,23 @@ struct BasketView: View {
             } else {
                 // Search mode - Activated when search field is focused
                 VStack(spacing: 0) {
-                    // Show last added item at top (~100px space) - Product card style
+                    // Show last added item at top (~100px space) - Custom design matching screenshot
                     if let lastItem = basketItems.last {
                         VStack(spacing: 0) {
                             // Top divider
                             Divider()
                             
-                            // Last basket item as product card with quantity controls
+                            // Last basket item - Custom layout
                             if let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
-                                MDXProductCard(
+                                AddedProductRow(
                                     product: product,
-                                    initialQuantity: lastItem.quantity,
-                                    onAddToCart: { qty in
-                                        // Update or remove the last item
+                                    quantity: lastItem.quantity,
+                                    onQuantityChange: { newQty in
                                         if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
-                                            if qty > 0 {
+                                            if newQty > 0 {
                                                 let updatedItem = BasketItem(
                                                     name: product.name,
-                                                    quantity: qty,
+                                                    quantity: newQty,
                                                     price: product.price
                                                 )
                                                 basketItems[existingIndex] = updatedItem
@@ -179,14 +178,14 @@ struct BasketView: View {
                         .background(MDXColors.background)
                     }
                     
-                    // "Search" heading (smaller size)
+                    // "Search" heading (even smaller)
                     Text("Search")
-                        .font(MDXTypography.heading3) // Changed from heading1 to heading3
+                        .font(MDXTypography.bodyLarge) // Changed to bodyLarge for smaller size
                         .foregroundColor(MDXColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, MDXSpacing.md)
-                        .padding(.top, MDXSpacing.md)
-                        .padding(.bottom, MDXSpacing.sm)
+                        .padding(.top, MDXSpacing.sm)
+                        .padding(.bottom, MDXSpacing.xs)
                     
                     Spacer()
                     
@@ -228,10 +227,10 @@ struct BasketView: View {
                                             .padding(.top, MDXSpacing.md)
                                             .padding(.bottom, MDXSpacing.sm)
                                         
-                                        // First product
+                                        // First product - always start with 0 quantity
                                         MDXProductCard(
                                             product: filteredProducts[0],
-                                            initialQuantity: basketItems.first(where: { $0.name == filteredProducts[0].name })?.quantity ?? 0,
+                                            initialQuantity: 0, // Always start with + button
                                             onAddToCart: { qty in
                                                 // Update or add product to basket
                                                 if let existingIndex = basketItems.firstIndex(where: { $0.name == filteredProducts[0].name }) {
@@ -276,7 +275,7 @@ struct BasketView: View {
                                             if index > 0 {
                                                 MDXProductCard(
                                                     product: product,
-                                                    initialQuantity: basketItems.first(where: { $0.name == product.name })?.quantity ?? 0,
+                                                    initialQuantity: 0, // Always start with + button
                                                     onAddToCart: { qty in
                                                         // Update or add product to basket
                                                         if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
@@ -773,6 +772,163 @@ struct BasketItem: Identifiable {
     let name: String
     let quantity: Int
     let price: Double
+}
+
+// MARK: - Added Product Row (for last added item display)
+struct AddedProductRow: View {
+    let product: Product
+    let quantity: Int
+    let onQuantityChange: (Int) -> Void
+    
+    // Helper to extract weight from product information
+    private func extractWeight(from info: String?) -> String {
+        guard let info = info else { return "" }
+        let patterns = [
+            "\\d+\\s*g",  // e.g., "150g", "500 g"
+            "\\d+\\s*kg", // e.g., "1kg", "2 kg"
+            "\\d+\\s*L",  // e.g., "1L", "2 L"
+            "\\d+\\s*ml", // e.g., "500ml", "250 ml"
+        ]
+        
+        for pattern in patterns {
+            if let range = info.range(of: pattern, options: .regularExpression) {
+                return String(info[range])
+            }
+        }
+        return ""
+    }
+    
+    // Calculate total price and weight based on quantity
+    private var totalPrice: Double {
+        product.price * Double(quantity)
+    }
+    
+    private var totalWeight: String {
+        let weight = extractWeight(from: product.productInformation)
+        if weight.isEmpty { return "" }
+        
+        // Extract number and unit
+        if let numberRange = weight.range(of: "\\d+", options: .regularExpression),
+           let number = Int(weight[numberRange]) {
+            let unit = weight.replacingOccurrences(of: "\\d+\\s*", with: "", options: .regularExpression)
+            let totalNumber = number * quantity
+            return "\(totalNumber)\(unit)"
+        }
+        return weight
+    }
+    
+    // Helper function to get appropriate icon for product
+    private func getProductIcon(for productName: String) -> String {
+        let name = productName.lowercased()
+        if name.contains("milk") {
+            return "drop.fill"
+        } else if name.contains("bread") {
+            return "square.fill"
+        } else if name.contains("egg") {
+            return "circle.fill"
+        } else if name.contains("cheese") || name.contains("yogurt") {
+            return "square.fill"
+        } else if name.contains("banana") || name.contains("apple") || name.contains("orange") || name.contains("strawberr") {
+            return "leaf.fill"
+        } else if name.contains("tomato") || name.contains("carrot") || name.contains("lettuce") {
+            return "leaf.fill"
+        }
+        return "photo"
+    }
+    
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            // Product Image (left)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(MDXColors.surface)
+                .frame(width: 80, height: 60)
+                .overlay(
+                    Image(systemName: getProductIcon(for: product.name))
+                        .font(.system(size: 24))
+                        .foregroundColor(MDXColors.textSecondary.opacity(0.4))
+                )
+            
+            // Product Info (center)
+            VStack(alignment: .leading, spacing: 4) {
+                // Product Name
+                Text(product.name)
+                    .font(MDXTypography.bodyMedium)
+                    .foregroundColor(MDXColors.textPrimary)
+                    .lineLimit(1)
+                
+                // Price and Unit: "1.50 (150g)"
+                Text(String(format: "%.2f (\(totalWeight))", totalPrice))
+                    .font(MDXTypography.bodySmall)
+                    .foregroundColor(MDXColors.textSecondary)
+            }
+            
+            Spacer()
+            
+            // Right side: Price, Unit, and Controls stacked
+            VStack(alignment: .trailing, spacing: 4) {
+                // Price (larger)
+                Text(String(format: "%.2f", totalPrice))
+                    .font(MDXTypography.productPrice)
+                    .foregroundColor(MDXColors.textPrimary)
+                
+                // Unit (below price)
+                if !totalWeight.isEmpty {
+                    Text(totalWeight)
+                        .font(MDXTypography.bodySmall)
+                        .foregroundColor(MDXColors.textSecondary)
+                }
+            }
+            
+            // Quantity Controls (minus, number, plus)
+            HStack(spacing: 0) {
+                // Minus Button
+                Button(action: {
+                    if quantity > 0 {
+                        onQuantityChange(quantity - 1)
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                    }
+                }) {
+                    Image(systemName: "minus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(MDXColors.textPrimary)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // Quantity Number
+                Text("\(quantity)")
+                    .font(MDXTypography.helveticaNeue(size: 16, weight: .bold))
+                    .foregroundColor(MDXColors.textPrimary)
+                    .frame(minWidth: 40)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(MDXColors.background)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                
+                // Plus Button
+                Button(action: {
+                    onQuantityChange(quantity + 1)
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(MDXColors.textPrimary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(MDXColors.background)
+    }
 }
 
 // MARK: - Basket Item Row
