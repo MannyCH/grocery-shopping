@@ -161,12 +161,9 @@ struct BasketView: View {
             } else {
                 // Search mode - Activated when search field is focused
                 VStack(spacing: 0) {
-                    // Show last added item at top (~100px space) - Custom design matching screenshot
+                    // Show last added item at top - Custom design matching screenshot
                     if let lastItem = basketItems.last {
                         VStack(spacing: 0) {
-                            // Top divider
-                            Divider()
-                            
                             // Last basket item - Custom layout
                             if let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
                                 AddedProductRow(
@@ -189,10 +186,10 @@ struct BasketView: View {
                                 )
                             }
                             
-                            // Bottom divider
+                            // Divider below last item
                             Divider()
+                                .padding(.bottom, MDXSpacing.sm)
                         }
-                        .frame(height: 100)
                         .background(MDXColors.background)
                     }
                     
