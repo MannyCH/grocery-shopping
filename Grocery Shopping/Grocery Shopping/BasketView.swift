@@ -5,6 +5,7 @@ struct BasketView: View {
     @State private var showAddProduct = false
     @State private var searchText = ""
     @State private var scrollOffset: CGFloat = 0
+    @FocusState private var isSearchFocused: Bool // Track if search field is focused
     private let scrollThreshold: CGFloat = 50 // When to show compact header
     
     // Mock basket items for demonstration
@@ -73,16 +74,18 @@ struct BasketView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Custom Header (includes toggle, title, and dropdown)
-            CustomHeaderView(
-                selectedPeriod: $selectedPeriod,
-                isCompact: scrollOffset > scrollThreshold
-            )
-            
-            Divider()
+            // Custom Header - Hide when search is focused to save space
+            if !isSearchFocused {
+                CustomHeaderView(
+                    selectedPeriod: $selectedPeriod,
+                    isCompact: scrollOffset > scrollThreshold
+                )
+                
+                Divider()
+            }
             
             // Main content area
-            if searchText.isEmpty {
+            if !isSearchFocused {
                 // Content Area with scroll detection (when not searching)
                 ScrollView {
                     GeometryReader { geometry in
@@ -138,7 +141,7 @@ struct BasketView: View {
                     scrollOffset = -value
                 }
             } else {
-                // Search mode - Show "Search" heading and contained results
+                // Search mode - Activated when search field is focused
                 VStack(spacing: 0) {
                     // "Search" heading at top (like in the screenshot)
                     Text("Search")
@@ -154,9 +157,12 @@ struct BasketView: View {
                     // Search Results Container - Fixed height (~500pt which is roughly 800px in design units)
                     VStack(spacing: 0) {
                         ScrollView {
-                            // Product cards (filtered by search)
-                            if filteredProducts.isEmpty {
-                                // No results state
+                            if searchText.isEmpty {
+                                // Empty space when no search text yet (just focused)
+                                Color.clear
+                                    .frame(height: 100)
+                            } else if filteredProducts.isEmpty {
+                                // No results state (when searching but nothing found)
                                 VStack(spacing: MDXSpacing.md) {
                                     Image(systemName: "magnifyingglass")
                                         .font(.system(size: 48))
@@ -280,7 +286,8 @@ struct BasketView: View {
                 
                 MDXSearchField(
                     text: $searchText,
-                    placeholder: "add products"
+                    placeholder: "add products",
+                    focused: $isSearchFocused
                 )
                 .padding(.horizontal, MDXSpacing.md)
                 .padding(.vertical, MDXSpacing.md)
