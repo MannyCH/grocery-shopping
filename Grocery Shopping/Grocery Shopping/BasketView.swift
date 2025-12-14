@@ -177,6 +177,7 @@ struct BasketView: View {
                                             AddedProductRow(
                                                 product: product,
                                                 quantity: item.quantity,
+                                                alwaysShowControls: false, // Collapsible in basket list
                                                 onQuantityChange: { newQty in
                                                     if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
                                                         if newQty > 0 {
@@ -216,6 +217,7 @@ struct BasketView: View {
                                 AddedProductRow(
                                     product: product,
                                     quantity: lastItem.quantity,
+                                    alwaysShowControls: true, // Always show controls in search mode
                                     onQuantityChange: { newQty in
                                         if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
                                             if newQty > 0 {
@@ -869,6 +871,7 @@ struct AddedProductRow: View {
     let product: Product
     let quantity: Int
     let onQuantityChange: (Int) -> Void
+    let alwaysShowControls: Bool // Whether to always show controls (for search mode)
     
     @State private var isExpanded = false // Track if counter is expanded
     @State private var collapseTimer: Timer?
@@ -984,7 +987,7 @@ struct AddedProductRow: View {
             }
             
             // Quantity Display/Controls - Collapsed or Expanded
-            if isExpanded {
+            if alwaysShowControls || isExpanded {
                 // Expanded: Full counter with minus, number, plus
                 HStack(spacing: 4) {
                     // Minus Button
@@ -993,7 +996,9 @@ struct AddedProductRow: View {
                             onQuantityChange(quantity - 1)
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
-                            startCollapseTimer()
+                            if !alwaysShowControls {
+                                startCollapseTimer()
+                            }
                         }
                     }) {
                         Image(systemName: "minus")
@@ -1019,7 +1024,9 @@ struct AddedProductRow: View {
                         onQuantityChange(quantity + 1)
                         let generator = UIImpactFeedbackGenerator(style: .light)
                         generator.impactOccurred()
-                        startCollapseTimer()
+                        if !alwaysShowControls {
+                            startCollapseTimer()
+                        }
                     }) {
                         Image(systemName: "plus")
                             .font(.system(size: 12, weight: .bold))
