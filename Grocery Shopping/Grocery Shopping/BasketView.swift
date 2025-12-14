@@ -1,28 +1,11 @@
 import SwiftUI
-import Combine
 
 struct BasketView: View {
     @State private var selectedPeriod = "Weekly"
     @State private var showAddProduct = false
     @State private var searchText = ""
     @State private var scrollOffset: CGFloat = 0
-    @State private var keyboardHeight: CGFloat = 0
-    @State private var lastAddedItem: BasketItem? = nil
-    @FocusState private var isSearchFocused: Bool
     private let scrollThreshold: CGFloat = 50 // When to show compact header
-    
-    // Keyboard observation
-    private var keyboardPublisher: AnyPublisher<CGFloat, Never> {
-        Publishers.Merge(
-            NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-                .map { notification -> CGFloat in
-                    (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect)?.height ?? 0
-                },
-            NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-                .map { _ in CGFloat(0) }
-        )
-        .eraseToAnyPublisher()
-    }
     
     // Mock basket items for demonstration
     @State private var basketItems: [BasketItem] = [
@@ -88,167 +71,24 @@ struct BasketView: View {
         }
     }
     
-    // Handle add to cart - clears search but keeps keyboard visible
-    private func handleAddToCart(product: Product, quantity: Int) {
-        if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
-            if quantity > 0 {
-                let updatedItem = BasketItem(
-                    name: product.name,
-                    quantity: quantity,
-                    price: product.price
-                )
-                basketItems[existingIndex] = updatedItem
-                lastAddedItem = updatedItem
-            } else {
-                basketItems.remove(at: existingIndex)
-                lastAddedItem = nil
-            }
-        } else if quantity > 0 {
-            let newItem = BasketItem(
-                name: product.name,
-                quantity: quantity,
-                price: product.price
-            )
-            basketItems.append(newItem)
-            lastAddedItem = newItem
-        }
-        
-        // Clear search but keep keyboard visible
-        searchText = ""
-        // Keep focus to maintain keyboard
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            isSearchFocused = true
-        }
-    }
-    
-    // Helper function to get appropriate icon for product
-    private func getProductIcon(for productName: String) -> String {
-        let name = productName.lowercased()
-        if name.contains("milk") {
-            return "drop.fill"
-        } else if name.contains("bread") {
-            return "square.fill"
-        } else if name.contains("egg") {
-            return "circle.fill"
-        } else if name.contains("cheese") || name.contains("yogurt") {
-            return "square.fill"
-        } else if name.contains("banana") || name.contains("apple") || name.contains("orange") || name.contains("strawberr") {
-            return "leaf.fill"
-        } else if name.contains("tomato") || name.contains("carrot") || name.contains("lettuce") {
-            return "leaf.fill"
-        }
-        return "photo"
-    }
-    
     var body: some View {
-        GeometryReader { geometry in
-            let screenHeight = geometry.size.height
-            let keyboardVisibleHeight = screenHeight - keyboardHeight
-            let topSectionHeight: CGFloat = lastAddedItem != nil ? 76 : 0 // Height for last added item
-            let searchFieldHeight: CGFloat = 60 // Approximate height for search field with padding
-            let drawerHeight = keyboardVisibleHeight - topSectionHeight - searchFieldHeight // Remaining space for drawer
-            
-            if keyboardHeight > 0 {
-                // Keyboard mode: Simple layout with search field at bottom and results above
-                VStack(spacing: 0) {
-                    // Search results list
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            if !searchText.isEmpty && !filteredProducts.isEmpty {
-                                // "my top products" caption before first item
-                                Text("my top products")
-                                    .font(MDXTypography.bodySmall)
-                                    .foregroundColor(MDXColors.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, MDXSpacing.md)
-                                    .padding(.bottom, MDXSpacing.sm)
-                                
-                                // First product
-                                MDXProductCard(
-                                    product: filteredProducts[0],
-                                    initialQuantity: basketItems.first(where: { $0.name == filteredProducts[0].name })?.quantity ?? 0,
-                                    onAddToCart: { qty in
-                                        handleAddToCart(product: filteredProducts[0], quantity: qty)
-                                    }
-                                )
-                                
-                                // "found products" caption after first item
-                                Text("found products")
-                                    .font(MDXTypography.bodySmall)
-                                    .foregroundColor(MDXColors.textSecondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, MDXSpacing.md)
-                                    .padding(.bottom, MDXSpacing.sm)
-                                
-                                // Remaining products (skip first one)
-                                ForEach(Array(filteredProducts.enumerated()), id: \.element.id) { index, product in
-                                    if index > 0 {
-                                        MDXProductCard(
-                                            product: product,
-                                            initialQuantity: basketItems.first(where: { $0.name == product.name })?.quantity ?? 0,
-                                            onAddToCart: { qty in
-                                                handleAddToCart(product: product, quantity: qty)
-                                            }
-                                        )
-                                    }
-                                }
-                            } else if !searchText.isEmpty && filteredProducts.isEmpty {
-                                // No results
-                                VStack(spacing: MDXSpacing.md) {
-                                    Image(systemName: "magnifyingglass")
-                                        .font(.system(size: 48))
-                                        .foregroundColor(MDXColors.textSecondary.opacity(0.5))
-                                        .padding(.top, MDXSpacing.xxl)
-                                    
-                                    Text("No products found")
-                                        .font(MDXTypography.heading3)
-                                        .foregroundColor(MDXColors.textPrimary)
-                                    
-                                    Text("Try a different search term")
-                                        .font(MDXTypography.body)
-                                        .foregroundColor(MDXColors.textSecondary)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, MDXSpacing.xxl)
-                            }
-                        }
-                        .padding(.bottom, MDXSpacing.xl)
+        VStack(spacing: 0) {
+            // Custom Header (includes toggle, title, and dropdown)
+            CustomHeaderView(
+                selectedPeriod: $selectedPeriod,
+                isCompact: scrollOffset > scrollThreshold
+            )
+                
+                Divider()
+                
+                // Content Area with scroll detection
+                ScrollView {
+                    GeometryReader { geometry in
+                        Color.clear
+                            .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                     }
-                    .background(MDXColors.background)
-                    
-                    // Search field at bottom (above keyboard)
-                    MDXSearchField(
-                        text: $searchText,
-                        placeholder: "add products",
-                        focused: $isSearchFocused
-                    )
-                    .padding(.horizontal, MDXSpacing.xl)
-                    .padding(.vertical, MDXSpacing.md)
-                    .background(MDXColors.background)
-                }
-                .frame(height: keyboardVisibleHeight) // Constrain to visible area above keyboard
-            } else {
-                // Normal mode: Standard layout
-                VStack(spacing: 0) {
-                    // Custom Header (includes toggle, title, and dropdown)
-                    CustomHeaderView(
-                        selectedPeriod: $selectedPeriod,
-                        isCompact: scrollOffset > scrollThreshold
-                    )
-                    
-                    Divider()
-                    
-                    // Content Area with scroll detection
-                    ScrollView {
-                        GeometryReader { scrollGeometry in
-                            Color.clear
-                                .preference(key: ScrollOffsetPreferenceKey.self, value: scrollGeometry.frame(in: .named("scroll")).minY)
-                        }
-                        .frame(height: 0)
-                        
-                        if searchText.isEmpty && basketItems.isEmpty {
+                    .frame(height: 0)
+                    if searchText.isEmpty && basketItems.isEmpty {
                         // Empty State Content (when basket is empty and no search)
                         VStack(spacing: MDXSpacing.lg) {
                             // Illustration
@@ -407,43 +247,26 @@ struct BasketView: View {
                             .padding(.bottom, MDXSpacing.xl)
                         }
                     }
-                    }
-                    .coordinateSpace(name: "scroll")
-                    .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                        scrollOffset = -value
-                    }
-                    
+                }
+                .coordinateSpace(name: "scroll")
+                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                    scrollOffset = -value
+                }
+                
                 // Search Field - MDX Search Component (above bottom navigation)
                 MDXSearchField(
                     text: $searchText,
-                    placeholder: "add products",
-                    focused: $isSearchFocused
+                    placeholder: "add products"
                 )
                 .padding(.horizontal, MDXSpacing.xl)
                 .padding(.vertical, MDXSpacing.md)
                 .background(MDXColors.background)
-                }
+            }
+            .background(MDXColors.background)
+            .sheet(isPresented: $showAddProduct) {
+                AddProductView()
             }
         }
-        .background(MDXColors.background)
-        .sheet(isPresented: $showAddProduct) {
-            AddProductView()
-        }
-        .onReceive(keyboardPublisher) { height in
-            withAnimation(.easeOut(duration: 0.2)) {
-                keyboardHeight = height
-            }
-        }
-        .onChange(of: keyboardHeight) { newHeight in
-            // When keyboard appears, ensure search field maintains focus
-            if newHeight > 0 {
-                // Small delay to allow view to switch to keyboard mode
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    isSearchFocused = true
-                }
-            }
-        }
-    }
 }
 
 struct CustomHeaderView: View {
@@ -926,4 +749,6 @@ struct BasketView_Previews: PreviewProvider {
             .previewDevice("iPhone 14 Pro")
     }
 }
+
+
 
