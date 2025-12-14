@@ -30,6 +30,7 @@ struct Product: Identifiable {
     let reductionTypeId: String? // reduction-type-id
     let reductionAmount: String? // reduction-amount
     let reductionSuffix: String? // reduction-suffix (e.g., "günstiger")
+    let category: ProductCategory // Category for grouping
     
     // Computed properties for convenience
     var badges: [String] {
@@ -42,6 +43,15 @@ struct Product: Identifiable {
         }
         return badges
     }
+}
+
+// MARK: - Product Category Enum
+enum ProductCategory: String, CaseIterable {
+    case dairyAndEggs = "Dairy & Eggs"
+    case fruitsAndVegetables = "Fruits & Vegetables"
+    case pasta = "Pasta"
+    case condimentsAndCanned = "Condiments & Canned Food"
+    case bread = "Bread & Bakery"
 }
 
 // MARK: - MDX Product Card (Horizontal Layout)
