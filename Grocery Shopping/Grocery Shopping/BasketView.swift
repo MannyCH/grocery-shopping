@@ -323,7 +323,7 @@ struct BasketView: View {
                                 .padding(.bottom, MDXSpacing.sm)
                             }
                         }
-                        .frame(maxHeight: 400) // Reduced from 500 to account for last item space
+                        .frame(maxHeight: 300) // Reduced from 400 to give more space for last item
                         .background(Color(white: 0.95)) // Light grey background for search container
                     }
                 }
