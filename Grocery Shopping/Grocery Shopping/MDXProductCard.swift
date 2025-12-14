@@ -311,7 +311,8 @@ struct MDXProductCard_Previews: PreviewProvider {
                     discountPrice: nil,
                     reductionTypeId: "01",
                     reductionAmount: "5",
-                    reductionSuffix: "günstiger"
+                    reductionSuffix: "günstiger",
+                    category: .dairyAndEggs
                 ),
                 onAddToCart: { _ in }
             )
@@ -340,7 +341,8 @@ struct MDXProductCard_Previews: PreviewProvider {
                     discountPrice: nil,
                     reductionTypeId: nil,
                     reductionAmount: nil,
-                    reductionSuffix: nil
+                    reductionSuffix: nil,
+                    category: .dairyAndEggs
                 ),
                 onAddToCart: { _ in }
             )
