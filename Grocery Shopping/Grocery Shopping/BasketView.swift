@@ -143,16 +143,34 @@ struct BasketView: View {
             } else {
                 // Search mode - Activated when search field is focused
                 VStack(spacing: 0) {
-                    // Show last added item at top (~100px space)
+                    // Show last added item at top (~100px space) - Product card style
                     if let lastItem = basketItems.last {
                         VStack(spacing: 0) {
                             // Top divider
                             Divider()
                             
-                            // Last basket item (compact view)
-                            BasketItemRow(item: lastItem)
-                                .padding(.horizontal, MDXSpacing.md)
-                                .padding(.vertical, MDXSpacing.sm)
+                            // Last basket item as product card with quantity controls
+                            if let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
+                                MDXProductCard(
+                                    product: product,
+                                    initialQuantity: lastItem.quantity,
+                                    onAddToCart: { qty in
+                                        // Update or remove the last item
+                                        if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
+                                            if qty > 0 {
+                                                let updatedItem = BasketItem(
+                                                    name: product.name,
+                                                    quantity: qty,
+                                                    price: product.price
+                                                )
+                                                basketItems[existingIndex] = updatedItem
+                                            } else {
+                                                basketItems.remove(at: existingIndex)
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                             
                             // Bottom divider
                             Divider()
@@ -161,9 +179,9 @@ struct BasketView: View {
                         .background(MDXColors.background)
                     }
                     
-                    // "Search" heading
+                    // "Search" heading (smaller size)
                     Text("Search")
-                        .font(MDXTypography.heading1)
+                        .font(MDXTypography.heading3) // Changed from heading1 to heading3
                         .foregroundColor(MDXColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, MDXSpacing.md)
@@ -238,6 +256,8 @@ struct BasketView: View {
                                                         price: filteredProducts[0].price
                                                     )
                                                     basketItems.append(newItem)
+                                                    // Clear search text after adding (keeps container visible)
+                                                    searchText = ""
                                                 }
                                             }
                                         )
@@ -281,6 +301,8 @@ struct BasketView: View {
                                                                 price: product.price
                                                             )
                                                             basketItems.append(newItem)
+                                                            // Clear search text after adding (keeps container visible)
+                                                            searchText = ""
                                                         }
                                                     }
                                                 )
