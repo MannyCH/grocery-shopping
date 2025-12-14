@@ -6,6 +6,7 @@ struct BasketView: View {
     @State private var searchText = ""
     @State private var scrollOffset: CGFloat = 0
     @FocusState private var isSearchFocused: Bool // Track if search field is focused
+    @State private var showSearchContainer = false // Track if search container should be visible
     private let scrollThreshold: CGFloat = 50 // When to show compact header
     
     // Mock basket items for demonstration - Start empty
@@ -99,8 +100,8 @@ struct BasketView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Custom Header - Hide when search is focused to save space
-            if !isSearchFocused {
+            // Custom Header - Hide when search container is visible
+            if !showSearchContainer {
                 CustomHeaderView(
                     selectedPeriod: $selectedPeriod,
                     isCompact: scrollOffset > scrollThreshold
@@ -110,7 +111,7 @@ struct BasketView: View {
             }
             
             // Main content area
-            if !isSearchFocused {
+            if !showSearchContainer {
                 // Content Area with scroll detection (when not searching)
                 ScrollView {
                     GeometryReader { geometry in
@@ -393,18 +394,24 @@ struct BasketView: View {
                         placeholder: "add products",
                         onSubmit: {
                             // Dismiss keyboard when Enter is pressed
-                            // Keep search container visible by not changing isSearchFocused
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            isSearchFocused = false
                         },
                         focused: $isSearchFocused
                     )
+                    .onChange(of: isSearchFocused) { newValue in
+                        // When field gets focus, show search container
+                        if newValue {
+                            showSearchContainer = true
+                        }
+                    }
                     
-                    // Cancel button (appears when search is focused)
-                    if isSearchFocused {
+                    // Cancel button (appears when search container is visible)
+                    if showSearchContainer {
                         Button(action: {
                             // Clear search and dismiss search container
                             searchText = ""
                             isSearchFocused = false
+                            showSearchContainer = false
                         }) {
                             Text("Cancel")
                                 .font(MDXTypography.body)
