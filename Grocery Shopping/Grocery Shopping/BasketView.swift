@@ -123,16 +123,34 @@ struct BasketView: View {
                         }
                     } else {
                         // Basket with items (no search)
-                        VStack(spacing: MDXSpacing.md) {
-                            // Basket items list
-                            LazyVStack(spacing: MDXSpacing.sm) {
+                        VStack(spacing: 0) {
+                            // Basket items list - using AddedProductRow
+                            LazyVStack(spacing: 0) {
                                 ForEach(basketItems, id: \.id) { item in
-                                    BasketItemRow(item: item)
+                                    if let product = sampleProducts.first(where: { $0.name == item.name }) {
+                                        AddedProductRow(
+                                            product: product,
+                                            quantity: item.quantity,
+                                            onQuantityChange: { newQty in
+                                                if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
+                                                    if newQty > 0 {
+                                                        let updatedItem = BasketItem(
+                                                            name: product.name,
+                                                            quantity: newQty,
+                                                            price: product.price
+                                                        )
+                                                        basketItems[existingIndex] = updatedItem
+                                                    } else {
+                                                        basketItems.remove(at: existingIndex)
+                                                    }
+                                                }
+                                            }
+                                        )
+                                        Divider()
+                                    }
                                 }
                             }
-                            .padding(.horizontal, MDXSpacing.xl)
-                            .padding(.top, MDXSpacing.lg)
-                            .padding(.bottom, MDXSpacing.xl)
+                            .padding(.top, MDXSpacing.sm)
                         }
                     }
                 }
@@ -260,6 +278,7 @@ struct BasketView: View {
                                                 }
                                             }
                                         )
+                                        .id(filteredProducts[0].productId) // Force recreation when product changes
                                         
                                         // "found products" caption after first item
                                         Text("found products")
@@ -305,6 +324,7 @@ struct BasketView: View {
                                                         }
                                                     }
                                                 )
+                                                .id(product.productId) // Force recreation when product changes
                                             }
                                         }
                                     }
@@ -850,28 +870,29 @@ struct AddedProductRow: View {
             
             // Product Info (center)
             VStack(alignment: .leading, spacing: 4) {
-                // Product Name
+                // Product Name (smaller)
                 Text(product.name)
-                    .font(MDXTypography.bodyMedium)
+                    .font(MDXTypography.bodySmall) // Made smaller
                     .foregroundColor(MDXColors.textPrimary)
                     .lineLimit(1)
                 
-                // Price and Unit: "1.50 (150g)"
-                Text(String(format: "%.2f (\(totalWeight))", totalPrice))
-                    .font(MDXTypography.bodySmall)
+                // Static Price and Unit: "1.50 (150g)" - NEVER changes with quantity
+                let weight = extractWeight(from: product.productInformation)
+                Text(String(format: "%.2f (\(weight))", product.price))
+                    .font(.system(size: 12)) // Made smaller
                     .foregroundColor(MDXColors.textSecondary)
             }
             
             Spacer()
             
-            // Right side: Price, Unit, and Controls stacked
-            VStack(alignment: .trailing, spacing: 4) {
-                // Price (larger)
+            // Right side: Dynamic Price, Unit (changes with quantity)
+            VStack(alignment: .trailing, spacing: 2) {
+                // Dynamic Price (larger) - multiplies by quantity
                 Text(String(format: "%.2f", totalPrice))
                     .font(MDXTypography.productPrice)
                     .foregroundColor(MDXColors.textPrimary)
                 
-                // Unit (below price)
+                // Dynamic Unit (below price) - multiplies by quantity
                 if !totalWeight.isEmpty {
                     Text(totalWeight)
                         .font(MDXTypography.bodySmall)
@@ -879,8 +900,8 @@ struct AddedProductRow: View {
                 }
             }
             
-            // Quantity Controls (minus, number, plus)
-            HStack(spacing: 0) {
+            // Quantity Controls (minus, number, plus) - More compact/square
+            HStack(spacing: 4) {
                 // Minus Button
                 Button(action: {
                     if quantity > 0 {
@@ -890,37 +911,35 @@ struct AddedProductRow: View {
                     }
                 }) {
                     Image(systemName: "minus")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(MDXColors.textPrimary)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 28, height: 28)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                // Quantity Number
+                // Quantity Number (square)
                 Text("\(quantity)")
-                    .font(MDXTypography.helveticaNeue(size: 16, weight: .bold))
+                    .font(MDXTypography.helveticaNeue(size: 14, weight: .bold))
                     .foregroundColor(MDXColors.textPrimary)
-                    .frame(minWidth: 40)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .frame(width: 28, height: 28)
                     .background(MDXColors.background)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: 4)
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
                 
-                // Plus Button
+                // Plus Button (square)
                 Button(action: {
                     onQuantityChange(quantity + 1)
                     let generator = UIImpactFeedbackGenerator(style: .light)
                     generator.impactOccurred()
                 }) {
                     Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(MDXColors.textPrimary)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 28, height: 28)
                         .background(Color.gray.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
