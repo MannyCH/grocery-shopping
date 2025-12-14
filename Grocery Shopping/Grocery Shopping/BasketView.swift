@@ -8,14 +8,8 @@ struct BasketView: View {
     @FocusState private var isSearchFocused: Bool // Track if search field is focused
     private let scrollThreshold: CGFloat = 50 // When to show compact header
     
-    // Mock basket items for demonstration
-    @State private var basketItems: [BasketItem] = [
-        BasketItem(name: "Bananas", quantity: 2, price: 3.50),
-        BasketItem(name: "Apples", quantity: 1, price: 2.80),
-        BasketItem(name: "Milk", quantity: 1, price: 4.20),
-        BasketItem(name: "Bread", quantity: 1, price: 2.50),
-        BasketItem(name: "Eggs", quantity: 6, price: 5.90)
-    ]
+    // Mock basket items for demonstration - Start empty
+    @State private var basketItems: [BasketItem] = []
     
     // Sample products for search - Using MDX web component structure
     let sampleProducts: [Product] = [
