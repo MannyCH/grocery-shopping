@@ -180,7 +180,7 @@ struct BasketView: View {
                     
                     // "Search" heading (even smaller)
                     Text("Search")
-                        .font(MDXTypography.bodyLarge) // Changed to bodyLarge for smaller size
+                        .font(MDXTypography.bodyMedium) // Using bodyMedium for smaller size
                         .foregroundColor(MDXColors.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, MDXSpacing.md)
