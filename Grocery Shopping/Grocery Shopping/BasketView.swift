@@ -249,9 +249,7 @@ struct BasketView: View {
                         .padding(.top, MDXSpacing.sm)
                         .padding(.bottom, MDXSpacing.xs)
                     
-                    Spacer()
-                    
-                    // Search Results Container - Fixed height (remaining space)
+                    // Search Results Container - Expands to fill available space
                     VStack(spacing: 0) {
                         ScrollView {
                             if searchText.isEmpty {
@@ -376,7 +374,7 @@ struct BasketView: View {
                                 .padding(.bottom, MDXSpacing.sm)
                             }
                         }
-                        .frame(maxHeight: 300) // Reduced from 400 to give more space for last item
+                        .frame(maxHeight: .infinity) // Expand to fill available space
                         .background(Color(white: 0.95)) // Light grey background for search container
                     }
                 }
