@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Shopping List View (In-Store Mode)
 struct ShoppingListView: View {
+    @Binding var isOnline: Bool // Binding to control toggle
     @State private var selectedPeriod = "Weekly"
     @State private var newItemText = ""
     @State private var planningItems: [ShoppingListItem] = []
@@ -11,7 +12,7 @@ struct ShoppingListView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            ShoppingListHeader(selectedPeriod: $selectedPeriod)
+            ShoppingListHeader(isOnline: $isOnline, selectedPeriod: $selectedPeriod)
             
             Divider()
             
@@ -109,27 +110,32 @@ struct ShoppingListView: View {
     
     private func addItem() {
         guard !newItemText.isEmpty else { return }
-        let newItem = ShoppingListItem(name: newItemText)
+        let newItem = ShoppingListItem(name: newItemText, isDone: false)
         planningItems.append(newItem)
         newItemText = ""
-        isAddingItem = false
+        // Keep keyboard active and field focused
+        isAddingItem = true
     }
     
     private func toggleItem(_ item: ShoppingListItem) {
         if let index = planningItems.firstIndex(where: { $0.id == item.id }) {
+            var updatedItem = item
+            updatedItem.isDone = true
             planningItems.remove(at: index)
-            doneItems.append(item)
+            doneItems.append(updatedItem)
         } else if let index = doneItems.firstIndex(where: { $0.id == item.id }) {
+            var updatedItem = item
+            updatedItem.isDone = false
             doneItems.remove(at: index)
-            planningItems.append(item)
+            planningItems.append(updatedItem)
         }
     }
 }
 
 // MARK: - Shopping List Header
 struct ShoppingListHeader: View {
+    @Binding var isOnline: Bool // Binding to control toggle
     @Binding var selectedPeriod: String
-    @State private var isOnline = false // In-store by default
     
     var body: some View {
         VStack(spacing: 0) {
@@ -261,6 +267,7 @@ struct StoreBanner: View {
 struct ShoppingListItem: Identifiable {
     let id = UUID()
     let name: String
+    var isDone: Bool
 }
 
 // MARK: - Shopping List Item Row
@@ -273,27 +280,30 @@ struct ShoppingListItemRow: View {
             Text(item.name)
                 .font(MDXTypography.body)
                 .foregroundColor(MDXColors.textPrimary)
+                .strikethrough(item.isDone, color: MDXColors.textPrimary) // Cross out if done
             
             Spacer()
             
-            // Find product button
-            Button(action: {}) {
-                Text("Find product")
-                    .font(MDXTypography.bodySmall)
-                    .foregroundColor(MDXColors.primary)
-                    .padding(.horizontal, MDXSpacing.md)
-                    .padding(.vertical, MDXSpacing.sm)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MDXCornerRadius.pill)
-                            .stroke(MDXColors.primary, lineWidth: 1)
-                    )
+            // Find product button (hidden when done)
+            if !item.isDone {
+                Button(action: {}) {
+                    Text("Find product")
+                        .font(MDXTypography.bodySmall)
+                        .foregroundColor(MDXColors.primary)
+                        .padding(.horizontal, MDXSpacing.md)
+                        .padding(.vertical, MDXSpacing.sm)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: MDXCornerRadius.pill)
+                                .stroke(MDXColors.primary, lineWidth: 1)
+                        )
+                }
             }
             
-            // Radio button (unchecked)
+            // Radio button (checked when done)
             Button(action: onToggle) {
-                Image(systemName: "circle")
+                Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 24))
-                    .foregroundColor(MDXColors.textPrimary)
+                    .foregroundColor(item.isDone ? MDXColors.primary : MDXColors.textPrimary)
             }
             .buttonStyle(PlainButtonStyle())
         }
@@ -409,7 +419,7 @@ struct BasketView: View {
             basketView
         } else {
             // In-Store mode - Show Shopping List
-            ShoppingListView()
+            ShoppingListView(isOnline: $isOnline)
         }
     }
     
