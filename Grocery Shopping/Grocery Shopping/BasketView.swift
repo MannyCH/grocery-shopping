@@ -897,8 +897,8 @@ struct BasketItem: Identifiable {
 struct AddedProductRow: View {
     let product: Product
     let quantity: Int
-    let onQuantityChange: (Int) -> Void
     let alwaysShowControls: Bool // Whether to always show controls (for search mode)
+    let onQuantityChange: (Int) -> Void // Moved after alwaysShowControls
     
     @State private var isExpanded = false // Track if counter is expanded
     @State private var collapseTimer: Timer?
