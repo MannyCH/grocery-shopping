@@ -1443,15 +1443,3 @@ struct BasketView_Previews: PreviewProvider {
             .previewDevice("iPhone 14 Pro")
     }
 }
-
-// MARK: - Shopping List View (In-Store Mode)
-// MARK: - Preview
-struct BasketView_Previews: PreviewProvider {
-    static var previews: some View {
-        BasketView()
-            .previewDevice("iPhone 14 Pro")
-    }
-}
-
-
-
