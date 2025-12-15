@@ -7,6 +7,7 @@ struct BasketView: View {
     @State private var scrollOffset: CGFloat = 0
     @FocusState private var isSearchFocused: Bool // Track if search field is focused
     @State private var showSearchContainer = false // Track if search container should be visible
+    @State private var isOnline = true // Track In-Store vs Online toggle
     private let scrollThreshold: CGFloat = 50 // When to show compact header
     
     // Mock basket items for demonstration - Start empty
@@ -99,10 +100,22 @@ struct BasketView: View {
     }
     
     var body: some View {
+        // Switch between Shopping List (In-Store) and Basket (Online)
+        if isOnline {
+            // Online mode - Show Basket
+            basketView
+        } else {
+            // In-Store mode - Show Shopping List
+            ShoppingListView()
+        }
+    }
+    
+    private var basketView: some View {
         VStack(spacing: 0) {
             // Custom Header - Hide when search container is visible
             if !showSearchContainer {
                 CustomHeaderView(
+                    isOnline: $isOnline,
                     selectedPeriod: $selectedPeriod,
                     isCompact: scrollOffset > scrollThreshold
                 )
@@ -447,7 +460,7 @@ struct BasketView: View {
 }
 
 struct CustomHeaderView: View {
-    @State private var isOnline = true // "online" is active by default
+    @Binding var isOnline: Bool // Lift state up to BasketView
     @Binding var selectedPeriod: String
     let isCompact: Bool
     
