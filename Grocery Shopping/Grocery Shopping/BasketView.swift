@@ -348,13 +348,14 @@ struct StackedCardsView: View {
     
     private var collapsedView: some View {
         ZStack(alignment: .top) {
-            ForEach(0..<maxVisible, id: \.self) { index in
+            // Draw cards from back to front for proper layering
+            ForEach((0..<maxVisible).reversed(), id: \.self) { index in
                 let itemIndex = basketItems.count - maxVisible + index
                 let reverseIndex = maxVisible - 1 - index
                 
                 if itemIndex >= 0 && itemIndex < basketItems.count {
                     if reverseIndex == 0 {
-                        // Top card
+                        // Top card - fully visible
                         if let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
                             AddedProductRow(
                                 product: product,
@@ -366,23 +367,23 @@ struct StackedCardsView: View {
                             )
                             .background(Color.white)
                             .cornerRadius(8)
-                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                            .zIndex(Double(maxVisible))
+                            .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 3)
+                            .zIndex(100)
                         }
                     } else {
-                        // Cards behind - show only 10px bottom edge
+                        // Cards behind - positioned to show 10px at bottom
                         let yOffset = cardHeight - stackOffset + (CGFloat(reverseIndex - 1) * stackOffset)
                         
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.white)
-                            .frame(height: 100)
+                            .frame(height: 30) // Smaller height - just enough for the visible part
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                             )
-                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 1)
                             .offset(y: yOffset)
-                            .zIndex(Double(maxVisible - reverseIndex))
+                            .zIndex(Double(reverseIndex))
                             .onTapGesture {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                     isExpanded = true
@@ -393,6 +394,7 @@ struct StackedCardsView: View {
             }
         }
         .frame(height: cardHeight + CGFloat(min(basketItems.count - 1, 3)) * stackOffset)
+        .clipped()
     }
 }
 
@@ -751,7 +753,7 @@ struct BasketView: View {
                                                 }
                                             }
                                         )
-                                        .id(product.productId) // Force recreation to avoid state bugs
+                                        .id("\(product.productId)-\(basketItems.count)") // Force recreation when basket changes
                                         
                                         Divider()
                                     }
@@ -820,7 +822,7 @@ struct BasketView: View {
                                                 }
                                             }
                                         )
-                                        .id(filteredProducts[0].productId) // Force recreation when product changes
+                                        .id("\(filteredProducts[0].productId)-\(basketItems.count)") // Force recreation when basket changes
                                         
                                         // "found products" caption with "search more" link
                                         HStack(alignment: .center, spacing: MDXSpacing.sm) {
@@ -880,7 +882,7 @@ struct BasketView: View {
                                                         }
                                                     }
                                                 )
-                                                .id(product.productId) // Force recreation when product changes
+                                                .id("\(product.productId)-\(basketItems.count)") // Force recreation when basket changes
                                             }
                                         }
                                     }
