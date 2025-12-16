@@ -347,54 +347,56 @@ struct StackedCardsView: View {
     }
     
     private var collapsedView: some View {
-        ZStack(alignment: .top) {
-            // Draw cards from back to front for proper layering
-            ForEach((0..<maxVisible).reversed(), id: \.self) { index in
-                let itemIndex = basketItems.count - maxVisible + index
-                let reverseIndex = maxVisible - 1 - index
+        VStack(spacing: 0) {
+            ZStack(alignment: .bottom) {
+                // Show card edges behind (from back to front)
+                if basketItems.count >= 3 {
+                    // Third card (deepest)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white)
+                        .frame(height: 12)
+                        .padding(.horizontal, 8)
+                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        .offset(y: -20)
+                        .zIndex(1)
+                }
                 
-                if itemIndex >= 0 && itemIndex < basketItems.count {
-                    if reverseIndex == 0 {
-                        // Top card - fully visible
-                        if let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
-                            AddedProductRow(
-                                product: product,
-                                quantity: basketItems[itemIndex].quantity,
-                                alwaysShowControls: true,
-                                onQuantityChange: { newQty in
-                                    onQuantityChange(product.name, newQty)
-                                }
-                            )
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 3)
-                            .zIndex(100)
+                if basketItems.count >= 2 {
+                    // Second card (middle)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white)
+                        .frame(height: 12)
+                        .padding(.horizontal, 4)
+                        .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1)
+                        .offset(y: -10)
+                        .zIndex(2)
+                }
+                
+                // Top card - fully visible with content
+                if let lastItem = basketItems.last,
+                   let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
+                    AddedProductRow(
+                        product: product,
+                        quantity: lastItem.quantity,
+                        alwaysShowControls: true,
+                        onQuantityChange: { newQty in
+                            onQuantityChange(product.name, newQty)
                         }
-                    } else {
-                        // Cards behind - positioned to show 10px at bottom
-                        let yOffset = cardHeight - stackOffset + (CGFloat(reverseIndex - 1) * stackOffset)
-                        
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white)
-                            .frame(height: 30) // Smaller height - just enough for the visible part
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                            .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 1)
-                            .offset(y: yOffset)
-                            .zIndex(Double(reverseIndex))
-                            .onTapGesture {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    isExpanded = true
-                                }
-                            }
-                    }
+                    )
+                    .background(Color.white)
+                    .cornerRadius(8)
+                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .zIndex(100)
+                }
+            }
+            .onTapGesture {
+                // Tap anywhere to expand
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    isExpanded = true
                 }
             }
         }
-        .frame(height: cardHeight + CGFloat(min(basketItems.count - 1, 3)) * stackOffset)
-        .clipped()
+        .padding(.bottom, basketItems.count >= 2 ? 20 : 0)
     }
 }
 
