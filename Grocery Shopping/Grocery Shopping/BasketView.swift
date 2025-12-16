@@ -380,11 +380,11 @@ struct StackedCardsView: View {
                         product: product,
                         quantity: lastItem.quantity,
                         alwaysShowControls: true,
+                        backgroundColor: showHighlight ? highlightColor : Color.white,
                         onQuantityChange: { newQty in
                             onQuantityChange(product.name, newQty)
                         }
                     )
-                    .background(showHighlight ? highlightColor : Color.white)
                     .cornerRadius(8)
                     .shadow(color: showHighlight ? Color.green.opacity(0.3) : Color.black.opacity(0.2), 
                             radius: showHighlight ? 12 : 8, 
@@ -1438,6 +1438,7 @@ struct AddedProductRow: View {
     let product: Product
     let quantity: Int
     let alwaysShowControls: Bool // Whether to always show controls (for search mode)
+    var backgroundColor: Color = MDXColors.background // Optional background color for animations
     let onQuantityChange: (Int) -> Void // Moved after alwaysShowControls
     
     @State private var isExpanded = false // Track if counter is expanded
@@ -1629,7 +1630,7 @@ struct AddedProductRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(MDXColors.background)
+        .background(backgroundColor)
         .onDisappear {
             collapseTimer?.invalidate()
         }
