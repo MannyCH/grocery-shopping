@@ -270,6 +270,40 @@ struct ShoppingListItem: Identifiable {
     var isDone: Bool
 }
 
+// MARK: - Stacked Cards View
+struct StackedCardsView: View {
+    let basketItems: [BasketItem]
+    let sampleProducts: [Product]
+    let onQuantityChange: (String, Int) -> Void
+    private let maxVisibleCards = 3 // Show top 3 items
+    
+    var body: some View {
+        ZStack {
+            // Show stacked cards (from back to front)
+            ForEach(Array(basketItems.suffix(maxVisibleCards).enumerated().reversed()), id: \.element.id) { index, item in
+                if let product = sampleProducts.first(where: { $0.name == item.name }) {
+                    let cardIndex = basketItems.suffix(maxVisibleCards).count - 1 - index
+                    let isTopCard = cardIndex == 0
+                    
+                    AddedProductRow(
+                        product: product,
+                        quantity: item.quantity,
+                        alwaysShowControls: isTopCard, // Only top card shows controls
+                        onQuantityChange: { newQty in
+                            onQuantityChange(product.name, newQty)
+                        }
+                    )
+                    .opacity(isTopCard ? 1.0 : 0.7) // Fade cards behind
+                    .scaleEffect(isTopCard ? 1.0 : 0.95) // Slightly smaller cards behind
+                    .offset(y: CGFloat(cardIndex) * -8) // Stack offset
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                }
+            }
+        }
+        .padding(.bottom, CGFloat((basketItems.suffix(maxVisibleCards).count - 1)) * 8) // Compensate for negative offset
+    }
+}
+
 // MARK: - Shopping List Item Row
 struct ShoppingListItemRow: View {
     let item: ShoppingListItem
@@ -326,6 +360,14 @@ struct BasketView: View {
     // Mock basket items for demonstration - Start empty
     @State private var basketItems: [BasketItem] = []
     
+    // Favorite product IDs (shown when search is activated but empty)
+    private let favoriteProductIds = ["104041100011", "104041100012", "104041100050", "104041100020"] // Bananas, Apples, Orange Juice, Eggs
+    
+    // Computed property for favorite products
+    var favoriteProducts: [Product] {
+        sampleProducts.filter { favoriteProductIds.contains($0.productId) }
+    }
+    
     // Sample products for search - Using MDX web component structure
     let sampleProducts: [Product] = [
         // Dairy Products - Multiple Milk Varieties (at least 3+ for "milk" search)
@@ -345,6 +387,7 @@ struct BasketView: View {
         Product(productId: "104041100012", name: "Apples", brand: nil, productInformation: "1kg für eine Packung von diesem Produkt", price: 2.80, originalPrice: nil, insteadOf: nil, imageUrl: nil, ratingAverage: 4.5, ratingCount: 38, availability: "available", energyBadgeUrl: nil, energyBadgeAltText: nil, hasDiscount: false, discountAmount: nil, discountDescription: nil, cumulusPoints: nil, badgeDescription: nil, minimumPieces: nil, discountPrice: nil, reductionTypeId: nil, reductionAmount: nil, reductionSuffix: nil, category: .fruitsAndVegetables),
         Product(productId: "104041100013", name: "Strawberries", brand: nil, productInformation: "250g für eine Packung von diesem Produkt", price: 5.90, originalPrice: nil, insteadOf: nil, imageUrl: nil, ratingAverage: 4.8, ratingCount: 52, availability: "available", energyBadgeUrl: nil, energyBadgeAltText: nil, hasDiscount: false, discountAmount: nil, discountDescription: nil, cumulusPoints: nil, badgeDescription: "Bio", minimumPieces: nil, discountPrice: nil, reductionTypeId: nil, reductionAmount: nil, reductionSuffix: nil, category: .fruitsAndVegetables),
         Product(productId: "104041100014", name: "Oranges", brand: nil, productInformation: "1kg für eine Packung von diesem Produkt", price: 3.20, originalPrice: nil, insteadOf: nil, imageUrl: nil, ratingAverage: 4.3, ratingCount: 27, availability: "available", energyBadgeUrl: nil, energyBadgeAltText: nil, hasDiscount: false, discountAmount: nil, discountDescription: nil, cumulusPoints: nil, badgeDescription: nil, minimumPieces: nil, discountPrice: nil, reductionTypeId: nil, reductionAmount: nil, reductionSuffix: nil, category: .fruitsAndVegetables),
+        Product(productId: "104041100050", name: "Orange Juice", brand: "Migros", productInformation: "1L für eine Flasche von diesem Produkt", price: 4.90, originalPrice: nil, insteadOf: nil, imageUrl: nil, ratingAverage: 4.6, ratingCount: 78, availability: "available", energyBadgeUrl: nil, energyBadgeAltText: nil, hasDiscount: false, discountAmount: nil, discountDescription: nil, cumulusPoints: 8, badgeDescription: nil, minimumPieces: nil, discountPrice: nil, reductionTypeId: nil, reductionAmount: nil, reductionSuffix: nil, category: .fruitsAndVegetables),
         
         // Vegetables
         Product(productId: "104041100015", name: "Tomatoes", brand: nil, productInformation: "500g für eine Packung von diesem Produkt", price: 4.50, originalPrice: nil, insteadOf: nil, imageUrl: nil, ratingAverage: 4.2, ratingCount: 19, availability: "available", energyBadgeUrl: nil, energyBadgeAltText: nil, hasDiscount: false, discountAmount: nil, discountDescription: nil, cumulusPoints: nil, badgeDescription: "Bio", minimumPieces: nil, discountPrice: nil, reductionTypeId: nil, reductionAmount: nil, reductionSuffix: nil, category: .fruitsAndVegetables),
@@ -535,33 +578,29 @@ struct BasketView: View {
             } else {
                 // Search mode - Activated when search field is focused
                 VStack(spacing: 0) {
-                    // Show last added item at top - Custom design matching screenshot
-                    if let lastItem = basketItems.last {
+                    // Show stacked cards of last added items at top
+                    if !basketItems.isEmpty {
                         VStack(spacing: 0) {
-                            // Last basket item - Custom layout
-                            if let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
-                                AddedProductRow(
-                                    product: product,
-                                    quantity: lastItem.quantity,
-                                    alwaysShowControls: true, // Always show controls in search mode
-                                    onQuantityChange: { newQty in
-                                        if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
-                                            if newQty > 0 {
-                                                let updatedItem = BasketItem(
-                                                    name: product.name,
-                                                    quantity: newQty,
-                                                    price: product.price
-                                                )
-                                                basketItems[existingIndex] = updatedItem
-                                            } else {
-                                                basketItems.remove(at: existingIndex)
-                                            }
+                            StackedCardsView(
+                                basketItems: basketItems,
+                                sampleProducts: sampleProducts,
+                                onQuantityChange: { productName, newQty in
+                                    if let existingIndex = basketItems.firstIndex(where: { $0.name == productName }) {
+                                        if newQty > 0 {
+                                            let updatedItem = BasketItem(
+                                                name: productName,
+                                                quantity: newQty,
+                                                price: basketItems[existingIndex].price
+                                            )
+                                            basketItems[existingIndex] = updatedItem
+                                        } else {
+                                            basketItems.remove(at: existingIndex)
                                         }
                                     }
-                                )
-                            }
+                                }
+                            )
                             
-                            // Divider below last item
+                            // Divider below stacked cards
                             Divider()
                                 .padding(.bottom, MDXSpacing.sm)
                         }
@@ -581,9 +620,50 @@ struct BasketView: View {
                     VStack(spacing: 0) {
                         ScrollView {
                             if searchText.isEmpty {
-                                // Empty space when no search text yet (just focused)
-                                Color.clear
-                                    .frame(height: 50)
+                                // Show favorite products when search is activated but empty
+                                LazyVStack(spacing: 0) {
+                                    // "favorites" caption
+                                    Text("favorites")
+                                        .font(MDXTypography.bodySmall)
+                                        .foregroundColor(MDXColors.textSecondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 16)
+                                        .padding(.top, MDXSpacing.md)
+                                        .padding(.bottom, MDXSpacing.sm)
+                                    
+                                    // Show favorite products
+                                    ForEach(favoriteProducts) { product in
+                                        MDXProductCard(
+                                            product: product,
+                                            initialQuantity: 0, // Always start with + button
+                                            onAddToCart: { qty in
+                                                if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
+                                                    if qty > 0 {
+                                                        let updatedItem = BasketItem(
+                                                            name: product.name,
+                                                            quantity: qty,
+                                                            price: product.price
+                                                        )
+                                                        basketItems[existingIndex] = updatedItem
+                                                    } else {
+                                                        basketItems.remove(at: existingIndex)
+                                                    }
+                                                } else if qty > 0 {
+                                                    let newItem = BasketItem(
+                                                        name: product.name,
+                                                        quantity: qty,
+                                                        price: product.price
+                                                    )
+                                                    basketItems.append(newItem)
+                                                    // Don't clear search text for favorites - just added
+                                                }
+                                            }
+                                        )
+                                        .id(product.productId) // Force recreation to avoid state bugs
+                                        
+                                        Divider()
+                                    }
+                                }
                             } else if filteredProducts.isEmpty {
                                 // No results state (when searching but nothing found)
                                 VStack(spacing: MDXSpacing.md) {
