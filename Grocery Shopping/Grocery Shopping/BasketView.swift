@@ -275,32 +275,46 @@ struct StackedCardsView: View {
     let basketItems: [BasketItem]
     let sampleProducts: [Product]
     let onQuantityChange: (String, Int) -> Void
-    private let maxVisibleCards = 3 // Show top 3 items
     
     var body: some View {
-        ZStack {
-            // Show stacked cards (from back to front)
-            ForEach(Array(basketItems.suffix(maxVisibleCards).enumerated().reversed()), id: \.element.id) { index, item in
-                if let product = sampleProducts.first(where: { $0.name == item.name }) {
-                    let cardIndex = basketItems.suffix(maxVisibleCards).count - 1 - index
-                    let isTopCard = cardIndex == 0
-                    
-                    AddedProductRow(
-                        product: product,
-                        quantity: item.quantity,
-                        alwaysShowControls: isTopCard, // Only top card shows controls
-                        onQuantityChange: { newQty in
-                            onQuantityChange(product.name, newQty)
-                        }
-                    )
-                    .opacity(isTopCard ? 1.0 : 0.7) // Fade cards behind
-                    .scaleEffect(isTopCard ? 1.0 : 0.95) // Slightly smaller cards behind
-                    .offset(y: CGFloat(cardIndex) * -8) // Stack offset
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                }
+        ZStack(alignment: .top) {
+            // Show subtle card edges behind (only if there are 2+ items)
+            if basketItems.count >= 2 {
+                // Second card edge
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white)
+                    .frame(height: 8)
+                    .offset(y: -8)
+                    .padding(.horizontal, 8)
+                    .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
+            }
+            
+            if basketItems.count >= 3 {
+                // Third card edge
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white)
+                    .frame(height: 8)
+                    .offset(y: -16)
+                    .padding(.horizontal, 16)
+                    .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
+            }
+            
+            // Top card - fully visible and interactive
+            if let lastItem = basketItems.last,
+               let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
+                AddedProductRow(
+                    product: product,
+                    quantity: lastItem.quantity,
+                    alwaysShowControls: true,
+                    onQuantityChange: { newQty in
+                        onQuantityChange(product.name, newQty)
+                    }
+                )
+                .background(Color.white)
+                .cornerRadius(8)
+                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             }
         }
-        .padding(.bottom, CGFloat((basketItems.suffix(maxVisibleCards).count - 1)) * 8) // Compensate for negative offset
     }
 }
 
