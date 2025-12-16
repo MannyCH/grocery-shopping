@@ -386,10 +386,7 @@ struct StackedCardsView: View {
                         }
                     )
                     .cornerRadius(8)
-                    .shadow(color: showHighlight ? Color.green.opacity(0.3) : Color.black.opacity(0.2), 
-                            radius: showHighlight ? 12 : 8, 
-                            x: 0, 
-                            y: showHighlight ? 6 : 4)
+                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                     .scaleEffect(pulseScale)
                     .zIndex(100)
                 }
@@ -402,7 +399,7 @@ struct StackedCardsView: View {
             }
             .onChange(of: basketItems.count) { newCount in
                 // Detect when a new item is added
-                if newCount > lastItemCount {
+                if newCount > lastItemCount && lastItemCount >= 0 {
                     // Pulse animation sequence
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         pulseScale = 1.05
@@ -423,10 +420,12 @@ struct StackedCardsView: View {
                         }
                     }
                 }
+                // Update lastItemCount after animation is triggered
                 lastItemCount = newCount
             }
             .onAppear {
-                lastItemCount = basketItems.count
+                // Initialize with current count, or -1 to ensure first item triggers
+                lastItemCount = basketItems.isEmpty ? -1 : basketItems.count
             }
         }
         .padding(.bottom, 20) // Always add padding for the offset cards
