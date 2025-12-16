@@ -280,6 +280,14 @@ struct EnergyBadgeView: View {
             RoundedRectangle(cornerRadius: 2)
                 .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
         )
+        .onAppear {
+            // Reset quantity to initialQuantity when view appears (fixes scroll recycling issue)
+            quantity = initialQuantity
+        }
+        .onChange(of: initialQuantity) { newValue in
+            // Update quantity if initialQuantity changes
+            quantity = newValue
+        }
     }
 }
 
