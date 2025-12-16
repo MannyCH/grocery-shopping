@@ -802,7 +802,7 @@ struct BasketView: View {
                                                 }
                                             }
                                         )
-                                        .id("\(product.productId)-\(basketItems.count)") // Force recreation when basket changes
+                                        .id("\(product.productId)-favorites-\(basketItems.count)")
                                         
                                         Divider()
                                     }
@@ -875,7 +875,7 @@ struct BasketView: View {
                                                 }
                                             }
                                         )
-                                        .id("\(filteredProducts[0].productId)-\(basketItems.count)") // Force recreation when basket changes
+                                        .id("\(filteredProducts[0].productId)-search-\(searchText)-\(basketItems.count)")
                                         
                                         // "found products" caption with "search more" link
                                         HStack(alignment: .center, spacing: MDXSpacing.sm) {
@@ -935,7 +935,7 @@ struct BasketView: View {
                                                         }
                                                     }
                                                 )
-                                                .id("\(product.productId)-\(basketItems.count)") // Force recreation when basket changes
+                                                .id("\(product.productId)-search-\(searchText)-\(basketItems.count)")
                                             }
                                         }
                                     }
