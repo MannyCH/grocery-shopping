@@ -284,9 +284,12 @@ struct StackedCardsView: View {
     let sampleProducts: [Product]
     let onQuantityChange: (String, Int) -> Void
     @State private var isExpanded = false
+    @State private var showHighlight = false // Track highlight state for newly added items
+    @State private var lastItemCount = 0 // Track item count to detect new additions
     
     private let stackOffset: CGFloat = 10 // How much of each card shows below when collapsed
     private let expandedSpacing: CGFloat = 8 // Spacing between cards when expanded
+    private let highlightColor = Color(red: 0.949, green: 0.976, blue: 0.941) // #f2f9f0
     
     private var maxVisible: Int {
         min(basketItems.count, 4)
@@ -380,10 +383,11 @@ struct StackedCardsView: View {
                             onQuantityChange(product.name, newQty)
                         }
                     )
-                    .background(Color.white)
+                    .background(showHighlight ? highlightColor : Color.white)
                     .cornerRadius(8)
                     .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                     .zIndex(100)
+                    .animation(.easeInOut(duration: 0.3), value: showHighlight)
                 }
             }
             .onTapGesture {
@@ -391,6 +395,24 @@ struct StackedCardsView: View {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     isExpanded = true
                 }
+            }
+            .onChange(of: basketItems.count) { newCount in
+                // Detect when a new item is added
+                if newCount > lastItemCount {
+                    // Show highlight
+                    showHighlight = true
+                    
+                    // Fade out after 2 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation(.easeOut(duration: 0.5)) {
+                            showHighlight = false
+                        }
+                    }
+                }
+                lastItemCount = newCount
+            }
+            .onAppear {
+                lastItemCount = basketItems.count
             }
         }
         .padding(.bottom, 20) // Always add padding for the offset cards
@@ -715,13 +737,16 @@ struct BasketView: View {
                             if searchText.isEmpty {
                                 // Show favorite products when search is activated but empty
                                 LazyVStack(spacing: 0) {
+                                    // Add top padding to ensure first item is visible
+                                    Color.clear.frame(height: 4)
+                                    
                                     // "favorites" caption
                                     Text("favorites")
                                         .font(MDXTypography.bodySmall)
                                         .foregroundColor(MDXColors.textSecondary)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(.horizontal, 16)
-                                        .padding(.top, MDXSpacing.md)
+                                        .padding(.top, MDXSpacing.xs)
                                         .padding(.bottom, MDXSpacing.sm)
                                     
                                     // Show favorite products
@@ -778,6 +803,9 @@ struct BasketView: View {
                             } else {
                                 // Product cards list (MDX horizontal layout) - No spacing, full width
                                 LazyVStack(spacing: 0) {
+                                    // Add top padding to ensure first item is visible
+                                    Color.clear.frame(height: 4)
+                                    
                                     // "my top products" caption before first item
                                     if !filteredProducts.isEmpty {
                                         Text("my top products")
@@ -785,7 +813,7 @@ struct BasketView: View {
                                             .foregroundColor(MDXColors.textSecondary)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                             .padding(.horizontal, 16)
-                                            .padding(.top, MDXSpacing.md)
+                                            .padding(.top, MDXSpacing.xs)
                                             .padding(.bottom, MDXSpacing.sm)
                                         
                                         // First product - always start with 0 quantity
