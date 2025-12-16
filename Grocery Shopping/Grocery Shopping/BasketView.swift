@@ -275,46 +275,56 @@ struct StackedCardsView: View {
     let basketItems: [BasketItem]
     let sampleProducts: [Product]
     let onQuantityChange: (String, Int) -> Void
+    private let stackOffset: CGFloat = 10 // How much of each card shows below
     
     var body: some View {
         ZStack(alignment: .top) {
-            // Show subtle card edges behind (only if there are 2+ items)
-            if basketItems.count >= 2 {
-                // Second card edge
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white)
-                    .frame(height: 8)
-                    .offset(y: -8)
-                    .padding(.horizontal, 8)
-                    .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
-            }
+            // Show card bottoms peeking out behind (max 3 cards visible)
+            let visibleCount = min(basketItems.count, 3)
             
-            if basketItems.count >= 3 {
-                // Third card edge
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white)
-                    .frame(height: 8)
-                    .offset(y: -16)
-                    .padding(.horizontal, 16)
-                    .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
-            }
-            
-            // Top card - fully visible and interactive
-            if let lastItem = basketItems.last,
-               let product = sampleProducts.first(where: { $0.name == lastItem.name }) {
-                AddedProductRow(
-                    product: product,
-                    quantity: lastItem.quantity,
-                    alwaysShowControls: true,
-                    onQuantityChange: { newQty in
-                        onQuantityChange(product.name, newQty)
+            // Draw cards from back to front
+            ForEach(0..<visibleCount, id: \.self) { index in
+                let reverseIndex = visibleCount - 1 - index
+                let itemIndex = basketItems.count - visibleCount + index
+                
+                if itemIndex >= 0 && itemIndex < basketItems.count,
+                   let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
+                    
+                    let isTopCard = reverseIndex == 0
+                    let yOffset = CGFloat(reverseIndex) * stackOffset
+                    
+                    if isTopCard {
+                        // Top card - fully visible and interactive
+                        AddedProductRow(
+                            product: product,
+                            quantity: basketItems[itemIndex].quantity,
+                            alwaysShowControls: true,
+                            onQuantityChange: { newQty in
+                                onQuantityChange(product.name, newQty)
+                            }
+                        )
+                        .background(MDXColors.background)
+                        .cornerRadius(8)
+                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        .offset(y: yOffset)
+                        .zIndex(Double(reverseIndex))
+                    } else {
+                        // Cards behind - show only bottom edge
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(MDXColors.background)
+                            .frame(height: 100) // Full card height for proper shadow
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
+                            .offset(y: yOffset)
+                            .zIndex(Double(reverseIndex))
                     }
-                )
-                .background(Color.white)
-                .cornerRadius(8)
-                .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                }
             }
         }
+        .padding(.bottom, CGFloat(min(basketItems.count - 1, 2)) * stackOffset)
     }
 }
 
