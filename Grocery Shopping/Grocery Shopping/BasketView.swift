@@ -347,68 +347,52 @@ struct StackedCardsView: View {
     }
     
     private var collapsedView: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                ForEach(0..<maxVisible, id: \.self) { index in
-                    stackedCard(at: index)
+        ZStack(alignment: .top) {
+            ForEach(0..<maxVisible, id: \.self) { index in
+                let itemIndex = basketItems.count - maxVisible + index
+                let reverseIndex = maxVisible - 1 - index
+                
+                if itemIndex >= 0 && itemIndex < basketItems.count {
+                    if reverseIndex == 0 {
+                        // Top card
+                        if let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
+                            AddedProductRow(
+                                product: product,
+                                quantity: basketItems[itemIndex].quantity,
+                                alwaysShowControls: true,
+                                onQuantityChange: { newQty in
+                                    onQuantityChange(product.name, newQty)
+                                }
+                            )
+                            .background(Color.white)
+                            .cornerRadius(8)
+                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                            .zIndex(Double(maxVisible))
+                        }
+                    } else {
+                        // Cards behind - show only 10px bottom edge
+                        let yOffset = cardHeight - stackOffset + (CGFloat(reverseIndex - 1) * stackOffset)
+                        
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white)
+                            .frame(height: 100)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            .offset(y: yOffset)
+                            .zIndex(Double(maxVisible - reverseIndex))
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    isExpanded = true
+                                }
+                            }
+                    }
                 }
             }
         }
         .frame(height: cardHeight + CGFloat(min(basketItems.count - 1, 3)) * stackOffset)
-    }
-    
-    private func stackedCard(at index: Int) -> some View {
-        let itemIndex = basketItems.count - maxVisible + index
-        let reverseIndex = maxVisible - 1 - index
-        
-        return Group {
-            if itemIndex >= 0 && itemIndex < basketItems.count {
-                if reverseIndex == 0 {
-                    topCard(at: itemIndex)
-                } else {
-                    behindCard(reverseIndex: reverseIndex, itemIndex: itemIndex)
-                }
-            }
-        }
-    }
-    
-    private func topCard(at itemIndex: Int) -> some View {
-        Group {
-            if let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
-                AddedProductRow(
-                    product: product,
-                    quantity: basketItems[itemIndex].quantity,
-                    alwaysShowControls: true,
-                    onQuantityChange: { newQty in
-                        onQuantityChange(product.name, newQty)
-                    }
-                )
-                .background(Color.white)
-                .cornerRadius(8)
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                .zIndex(Double(maxVisible))
-            }
-        }
-    }
-    
-    private func behindCard(reverseIndex: Int, itemIndex: Int) -> some View {
-        let yOffset = cardHeight - stackOffset + (CGFloat(reverseIndex - 1) * stackOffset)
-        
-        return RoundedRectangle(cornerRadius: 8)
-            .fill(Color.white)
-            .frame(height: 100)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
-            )
-            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-            .offset(y: yOffset)
-            .zIndex(Double(maxVisible - reverseIndex))
-            .onTapGesture {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    isExpanded = true
-                }
-            }
     }
 }
 
