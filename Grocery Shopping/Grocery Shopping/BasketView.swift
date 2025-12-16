@@ -285,6 +285,7 @@ struct StackedCardsView: View {
     let onQuantityChange: (String, Int) -> Void
     @State private var isExpanded = false
     @State private var showHighlight = false // Track highlight state for newly added items
+    @State private var pulseScale: CGFloat = 1.0 // Track scale for pulse animation
     @State private var lastItemCount = 0 // Track item count to detect new additions
     
     private let stackOffset: CGFloat = 10 // How much of each card shows below when collapsed
@@ -385,9 +386,12 @@ struct StackedCardsView: View {
                     )
                     .background(showHighlight ? highlightColor : Color.white)
                     .cornerRadius(8)
-                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .shadow(color: showHighlight ? Color.green.opacity(0.3) : Color.black.opacity(0.2), 
+                            radius: showHighlight ? 12 : 8, 
+                            x: 0, 
+                            y: showHighlight ? 6 : 4)
+                    .scaleEffect(pulseScale)
                     .zIndex(100)
-                    .animation(.easeInOut(duration: 0.3), value: showHighlight)
                 }
             }
             .onTapGesture {
@@ -399,12 +403,22 @@ struct StackedCardsView: View {
             .onChange(of: basketItems.count) { newCount in
                 // Detect when a new item is added
                 if newCount > lastItemCount {
-                    // Show highlight
-                    showHighlight = true
+                    // Pulse animation sequence
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        pulseScale = 1.05
+                        showHighlight = true
+                    }
                     
-                    // Fade out after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation(.easeOut(duration: 0.5)) {
+                    // Scale back to normal
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            pulseScale = 1.0
+                        }
+                    }
+                    
+                    // Fade out highlight after 1.5 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        withAnimation(.easeOut(duration: 0.6)) {
                             showHighlight = false
                         }
                     }
@@ -733,12 +747,14 @@ struct BasketView: View {
                     
                     // Search Results Container - Expands to fill available space
                     VStack(spacing: 0) {
-                        ScrollView {
-                            if searchText.isEmpty {
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                if searchText.isEmpty {
                                 // Show favorite products when search is activated but empty
                                 LazyVStack(spacing: 0) {
                                     // Add top padding to ensure first item is visible
                                     Color.clear.frame(height: 4)
+                                        .id("searchTop")
                                     
                                     // "favorites" caption
                                     Text("favorites")
@@ -805,6 +821,7 @@ struct BasketView: View {
                                 LazyVStack(spacing: 0) {
                                     // Add top padding to ensure first item is visible
                                     Color.clear.frame(height: 4)
+                                        .id("searchTop")
                                     
                                     // "my top products" caption before first item
                                     if !filteredProducts.isEmpty {
@@ -919,6 +936,16 @@ struct BasketView: View {
                         }
                         .frame(maxHeight: .infinity) // Expand to fill available space
                         .background(Color(white: 0.95)) // Light grey background for search container
+                            }
+                            .onChange(of: searchText) { newValue in
+                                // Scroll to top when search is cleared
+                                if newValue.isEmpty {
+                                    withAnimation {
+                                        proxy.scrollTo("searchTop", anchor: .top)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
