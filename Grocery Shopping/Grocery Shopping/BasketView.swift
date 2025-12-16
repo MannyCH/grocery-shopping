@@ -936,17 +936,16 @@ struct BasketView: View {
                         }
                         .frame(maxHeight: .infinity) // Expand to fill available space
                         .background(Color(white: 0.95)) // Light grey background for search container
-                            }
-                            .onChange(of: searchText) { newValue in
-                                // Scroll to top when search is cleared
-                                if newValue.isEmpty {
-                                    withAnimation {
-                                        proxy.scrollTo("searchTop", anchor: .top)
-                                    }
+                        .onChange(of: searchText) { newValue in
+                            // Scroll to top when search is cleared
+                            if newValue.isEmpty {
+                                withAnimation {
+                                    proxy.scrollTo("searchTop", anchor: .top)
                                 }
                             }
                         }
                     }
+                }
                 }
             }
             
