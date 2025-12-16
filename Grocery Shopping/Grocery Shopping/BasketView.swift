@@ -112,9 +112,12 @@ struct ShoppingListView: View {
         guard !newItemText.isEmpty else { return }
         let newItem = ShoppingListItem(name: newItemText, isDone: false)
         planningItems.append(newItem)
-        newItemText = ""
-        // Keep keyboard active and field focused
-        isAddingItem = true
+        
+        // Clear text while maintaining focus (prevents keyboard flicker)
+        DispatchQueue.main.async {
+            newItemText = ""
+            isAddingItem = true
+        }
     }
     
     private func toggleItem(_ item: ShoppingListItem) {
