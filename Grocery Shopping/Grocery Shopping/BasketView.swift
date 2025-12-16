@@ -263,6 +263,14 @@ struct StoreBanner: View {
     }
 }
 
+// MARK: - Card Height Preference Key
+struct CardHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 90
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 // MARK: - Shopping List Item Model
 struct ShoppingListItem: Identifiable {
     let id = UUID()
@@ -322,55 +330,64 @@ struct StackedCardsView: View {
                 }
             } else {
                 // Collapsed view - stacked cards
-                ZStack(alignment: .top) {
-                    let maxVisible = min(basketItems.count, 4) // Show up to 4 layers (1 top + 3 behind)
-                    
-                    // Draw cards from back to front
-                    ForEach(0..<maxVisible, id: \.self) { index in
-                        let itemIndex = basketItems.count - maxVisible + index
-                        let reverseIndex = maxVisible - 1 - index // 0 = top card
+                GeometryReader { geometry in
+                    ZStack(alignment: .top) {
+                        let maxVisible = min(basketItems.count, 4) // Show up to 4 layers (1 top + 3 behind)
                         
-                        if itemIndex >= 0 && itemIndex < basketItems.count {
-                            if reverseIndex == 0 {
-                                // Top card - fully visible with content
-                                if let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
-                                    AddedProductRow(
-                                        product: product,
-                                        quantity: basketItems[itemIndex].quantity,
-                                        alwaysShowControls: true,
-                                        onQuantityChange: { newQty in
-                                            onQuantityChange(product.name, newQty)
-                                        }
-                                    )
-                                    .background(Color.white)
-                                    .cornerRadius(8)
-                                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                                    .zIndex(Double(maxVisible - reverseIndex))
-                                }
-                            } else {
-                                // Cards behind - show only 10px bottom edge
-                                let yOffset = CGFloat(reverseIndex) * stackOffset
-                                
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white)
-                                    .frame(height: 100)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
-                                    )
-                                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                    .offset(y: yOffset)
-                                    .zIndex(Double(maxVisible - reverseIndex))
-                                    .onTapGesture {
-                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                            isExpanded = true
-                                        }
+                        // Measure top card height and draw cards
+                        ForEach(0..<maxVisible, id: \.self) { index in
+                            let itemIndex = basketItems.count - maxVisible + index
+                            let reverseIndex = maxVisible - 1 - index // 0 = top card
+                            
+                            if itemIndex >= 0 && itemIndex < basketItems.count {
+                                if reverseIndex == 0 {
+                                    // Top card - fully visible with content
+                                    if let product = sampleProducts.first(where: { $0.name == basketItems[itemIndex].name }) {
+                                        AddedProductRow(
+                                            product: product,
+                                            quantity: basketItems[itemIndex].quantity,
+                                            alwaysShowControls: true,
+                                            onQuantityChange: { newQty in
+                                                onQuantityChange(product.name, newQty)
+                                            }
+                                        )
+                                        .background(
+                                            GeometryReader { cardGeometry in
+                                                Color.white
+                                                    .preference(key: CardHeightPreferenceKey.self, value: cardGeometry.size.height)
+                                            }
+                                        )
+                                        .cornerRadius(8)
+                                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                                        .zIndex(Double(maxVisible - reverseIndex))
                                     }
+                                } else {
+                                    // Cards behind - show only 10px bottom edge
+                                    // Position cards so they peek out 10px from bottom of top card
+                                    let cardHeight: CGFloat = 90 // Approximate height of top card
+                                    let yOffset = cardHeight - stackOffset + (CGFloat(reverseIndex - 1) * stackOffset)
+                                    
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.white)
+                                        .frame(height: 100)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                                        )
+                                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                        .offset(y: yOffset)
+                                        .zIndex(Double(maxVisible - reverseIndex))
+                                        .onTapGesture {
+                                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                                isExpanded = true
+                                            }
+                                        }
+                                }
                             }
                         }
                     }
                 }
-                .padding(.bottom, CGFloat(min(basketItems.count - 1, 3)) * stackOffset)
+                .frame(height: 90 + CGFloat(min(basketItems.count - 1, 3)) * stackOffset)
             }
         }
     }
