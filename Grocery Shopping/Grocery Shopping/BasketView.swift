@@ -225,7 +225,7 @@ struct StoreBanner: View {
         HStack(spacing: MDXSpacing.sm) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text("Preise & Verfügbarkeit für:")
+                    Text("Prices & Availability for:")
                         .font(MDXTypography.bodySmall)
                         .foregroundColor(MDXColors.textPrimary)
                 }
@@ -236,7 +236,7 @@ struct StoreBanner: View {
                         .foregroundColor(MDXColors.textPrimary)
                     
                     Button(action: {}) {
-                        Text("ändern")
+                        Text("change")
                             .font(MDXTypography.bodySmall)
                             .foregroundColor(MDXColors.primary)
                             .underline()
@@ -252,14 +252,16 @@ struct StoreBanner: View {
                     .fill(Color.green)
                     .frame(width: 8, height: 8)
                 
-                Text("Offen bis 19h")
+                Text("Open until 7pm")
                     .font(MDXTypography.bodySmall)
                     .foregroundColor(Color.green)
             }
         }
         .padding(.horizontal, MDXSpacing.md)
         .padding(.vertical, MDXSpacing.md)
-        .background(Color(red: 0.95, green: 0.9, blue: 0.85))
+        .background(Color(red: 0.961, green: 0.961, blue: 0.961)) // #f5f5f5
+        .cornerRadius(16)
+        .padding(.horizontal, 8)
     }
 }
 
@@ -286,7 +288,7 @@ struct StackedCardsView: View {
     @State private var isExpanded = false
     @State private var showHighlight = false // Track highlight state for newly added items
     @State private var pulseScale: CGFloat = 1.0 // Track scale for pulse animation
-    @State private var lastItemCount = 0 // Track item count to detect new additions
+    @State private var lastItemId: UUID? = nil // Track last item ID to detect new additions
     
     private let stackOffset: CGFloat = 10 // How much of each card shows below when collapsed
     private let expandedSpacing: CGFloat = 8 // Spacing between cards when expanded
@@ -397,9 +399,9 @@ struct StackedCardsView: View {
                     isExpanded = true
                 }
             }
-            .onChange(of: basketItems.count) { newCount in
-                // Detect when a new item is added
-                if newCount > lastItemCount && lastItemCount >= 0 {
+            .onChange(of: basketItems.last?.id) { newItemId in
+                // Detect when a new item is added by checking if last item ID changed
+                if let newId = newItemId, newId != lastItemId {
                     // Pulse animation sequence
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                         pulseScale = 1.05
@@ -419,13 +421,14 @@ struct StackedCardsView: View {
                             showHighlight = false
                         }
                     }
+                    
+                    // Update lastItemId after animation is triggered
+                    lastItemId = newId
                 }
-                // Update lastItemCount after animation is triggered
-                lastItemCount = newCount
             }
             .onAppear {
-                // Initialize with current count, or -1 to ensure first item triggers
-                lastItemCount = basketItems.isEmpty ? -1 : basketItems.count
+                // Initialize with current last item ID (or nil if empty)
+                lastItemId = basketItems.last?.id
             }
         }
         .padding(.bottom, 20) // Always add padding for the offset cards
