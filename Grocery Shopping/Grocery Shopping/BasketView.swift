@@ -349,28 +349,25 @@ struct StackedCardsView: View {
     private var collapsedView: some View {
         VStack(spacing: 0) {
             ZStack(alignment: .bottom) {
-                // Show card edges behind (from back to front)
-                if basketItems.count >= 3 {
-                    // Third card (deepest)
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white)
-                        .frame(height: 12)
-                        .padding(.horizontal, 8)
-                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        .offset(y: -20)
-                        .zIndex(1)
-                }
+                // Always show stacked card edges for consistent visual depth
                 
-                if basketItems.count >= 2 {
-                    // Second card (middle)
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white)
-                        .frame(height: 12)
-                        .padding(.horizontal, 4)
-                        .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1)
-                        .offset(y: -10)
-                        .zIndex(2)
-                }
+                // Third card edge (deepest) - always visible
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white)
+                    .frame(height: 12)
+                    .padding(.horizontal, 8)
+                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    .offset(y: -20)
+                    .zIndex(1)
+                
+                // Second card edge (middle) - always visible
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white)
+                    .frame(height: 12)
+                    .padding(.horizontal, 4)
+                    .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1)
+                    .offset(y: -10)
+                    .zIndex(2)
                 
                 // Top card - fully visible with content
                 if let lastItem = basketItems.last,
@@ -396,7 +393,7 @@ struct StackedCardsView: View {
                 }
             }
         }
-        .padding(.bottom, basketItems.count >= 2 ? 20 : 0)
+        .padding(.bottom, 20) // Always add padding for the offset cards
     }
 }
 
