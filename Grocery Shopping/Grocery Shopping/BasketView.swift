@@ -18,6 +18,7 @@ struct ShoppingListView: View {
             
             // Store Banner
             StoreBanner()
+                .padding(.top, 8)
             
             // Shopping List Content
             ScrollView {
@@ -111,11 +112,14 @@ struct ShoppingListView: View {
     private func addItem() {
         guard !newItemText.isEmpty else { return }
         let newItem = ShoppingListItem(name: newItemText, isDone: false)
+        
+        // Add item below the input field
         planningItems.append(newItem)
         
-        // Clear text while maintaining focus (prevents keyboard flicker)
-        DispatchQueue.main.async {
+        // Small delay to show the item was added, then clear for next entry
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             newItemText = ""
+            // Keep focus on the input field
             isAddingItem = true
         }
     }
