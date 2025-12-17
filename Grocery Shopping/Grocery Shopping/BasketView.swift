@@ -778,7 +778,8 @@ struct BasketView: View {
                                     ForEach(favoriteProducts) { product in
                                         MDXProductCard(
                                             product: product,
-                                            initialQuantity: 0, // Always start with + button
+                                            initialQuantity: 0,
+                                            alwaysShowAddButton: true, // Search results: never show counter
                                             onAddToCart: { qty in
                                                 if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {
                                                     if qty > 0 {
@@ -845,7 +846,8 @@ struct BasketView: View {
                                         // First product - always start with 0 quantity
                                         MDXProductCard(
                                             product: filteredProducts[0],
-                                            initialQuantity: 0, // Always start with + button
+                                            initialQuantity: 0,
+                                            alwaysShowAddButton: true, // Search results: never show counter
                                             onAddToCart: { qty in
                                                 // Update or add product to basket
                                                 if let existingIndex = basketItems.firstIndex(where: { $0.name == filteredProducts[0].name }) {
@@ -905,7 +907,8 @@ struct BasketView: View {
                                             if index > 0 {
                                                 MDXProductCard(
                                                     product: product,
-                                                    initialQuantity: 0, // Always start with + button
+                                                    initialQuantity: 0,
+                                                    alwaysShowAddButton: true, // Search results: never show counter
                                                     onAddToCart: { qty in
                                                         // Update or add product to basket
                                                         if let existingIndex = basketItems.firstIndex(where: { $0.name == product.name }) {

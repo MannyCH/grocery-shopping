@@ -60,12 +60,14 @@ struct MDXProductCard: View {
     let product: Product
     let onAddToCart: ((Int) -> Void)? // Changed to accept quantity
     let initialQuantity: Int // Initial quantity from basket
+    let alwaysShowAddButton: Bool // If true, never show counter - just add button
     @State private var showAddedFeedback = false
     @State private var quantity: Int = 0 // Track quantity for this product
     
-    init(product: Product, initialQuantity: Int = 0, onAddToCart: ((Int) -> Void)? = nil) {
+    init(product: Product, initialQuantity: Int = 0, alwaysShowAddButton: Bool = false, onAddToCart: ((Int) -> Void)? = nil) {
         self.product = product
         self.initialQuantity = initialQuantity
+        self.alwaysShowAddButton = alwaysShowAddButton
         self.onAddToCart = onAddToCart
         self._quantity = State(initialValue: initialQuantity)
     }
@@ -100,7 +102,8 @@ struct MDXProductCard: View {
                     Spacer()
                     
                     // Quantity Selector or Add Button (top right)
-                    if quantity > 0 {
+                    // For search results (alwaysShowAddButton = true), always show only the add button
+                    if quantity > 0 && !alwaysShowAddButton {
                         // Quantity Selector: Minus, Number, Plus
                         HStack(spacing: 0) {
                             // Minus Button
@@ -152,13 +155,18 @@ struct MDXProductCard: View {
                     } else {
                         // Add Button - Black plus icon (initial state)
                         Button(action: {
-                            quantity = 1
-                            onAddToCart?(quantity)
+                            onAddToCart?(1) // Always add 1
                             let generator = UIImpactFeedbackGenerator(style: .medium)
                             generator.impactOccurred()
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                // Transition to quantity selector
+                            
+                            // For search results, keep showing add button (don't update quantity)
+                            if !alwaysShowAddButton {
+                                quantity = 1
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    // Transition to quantity selector
+                                }
                             }
+                            // If alwaysShowAddButton is true, quantity stays 0 so add button stays visible
                         }) {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .bold))
